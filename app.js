@@ -180,7 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     newChatBtn.addEventListener('click', () => { createNewSession(); sidebar.classList.remove('open'); });
-    clearAllBtn.addEventListener('click', () => { sessions = []; createNewSession(); });
+    clearAllBtn.addEventListener('click', () => { 
+        sessions = []; 
+        createNewSession(); 
+        p2pConnections.forEach(c => c.send({ type: 'clear_chat' }));
+    });
     openSidebarBtn.addEventListener('click', () => sidebar.classList.add('open'));
     closeSidebarBtn.addEventListener('click', () => sidebar.classList.remove('open'));
 
@@ -254,6 +258,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
+            } else if (data.type === 'clear_chat') {
+                sessions = [];
+                createNewSession();
+                if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
+                setTimeout(() => alert("A collaborator cleared the shared workspace."), 100);
             }
         });
         conn.on('close', () => { p2pConnections = p2pConnections.filter(c => c !== conn); });
