@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let openAiApiKey = localStorage.getItem('chatzenOpenAIKey') || '';
     let gnewsKey = localStorage.getItem('chatzenGnewsKey') || '';
     let p2pUsername = localStorage.getItem('chatzenP2PUsername') || null;
+    let cachedGeminiModel = localStorage.getItem('chatzenGeminiModel') || null;
     
     // Serverless WebRTC State (PeerJS)
     let peer = null;
@@ -344,6 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
     saveKeyBtn.addEventListener('click', () => {
         geminiApiKey = apiKeyInput.value.trim();
         localStorage.setItem('chatzenGeminiKey', geminiApiKey);
+        // Invalidate the cached model so it re-checks newly authorized models
+        localStorage.removeItem('chatzenGeminiModel');
+        cachedGeminiModel = null;
         openAiApiKey = openAiKeyInput.value.trim();
         localStorage.setItem('chatzenOpenAIKey', openAiApiKey);
         const gnewsInput = document.getElementById('gnews-key-input');
@@ -651,8 +655,37 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
         }
     }
 
+    async function getSupportedGeminiModel() {
+        if (cachedGeminiModel) return cachedGeminiModel;
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
+            const data = await res.json();
+            if (!data.models) return "gemini-1.5-flash-latest"; // Safe fallback
+            
+            // Prioritize the fastest/latest text generation models
+            const validModels = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent"));
+            const targetNames = ["gemini-1.5-flash", "gemini-flash-1.5", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
+            
+            for (let name of targetNames) {
+                const found = validModels.find(m => m.name === `models/${name}`);
+                if (found) {
+                    cachedGeminiModel = name;
+                    localStorage.setItem('chatzenGeminiModel', name);
+                    return name;
+                }
+            }
+            // Absolute final fallback to whatever generative model they have
+            const firstValid = validModels.find(m => m.name.includes("gemini"));
+            return firstValid ? firstValid.name.replace("models/", "") : "gemini-1.5-flash-latest";
+        } catch (e) {
+            console.error("Model discovery failed", e);
+            return "gemini-1.5-flash-latest";
+        }
+    }
+
     async function getGeminiResponse(userText, targetLang) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+        const activeModel = await getSupportedGeminiModel();
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${geminiApiKey}`;
         const systemPrompt = `You are LAY, a super friendly, warm, and chill AI buddy. You talk exactly like a close human friend having a real conversation - casual, cheerful, caring, and expressive. Use emojis naturally when it feels right. Be genuinely enthusiastic and fun! 
 IMPORTANT: ALWAYS reply in the EXACT SAME LANGUAGE the user types in. If they use Hindi, reply in Hindi. Telugu means Telugu. Spanish means Spanish. NEVER switch to English unless they wrote in English.
 Image generation: If the user wants to see a picture of something, embed it like: ![description](https://image.pollinations.ai/prompt/URL_ENCODED_DESCRIPTION)
