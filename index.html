@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatZen - Smart AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase Serverless Full-Stack SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="dynamic-bg"></div>
+    <div class="ambient-background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button id="new-chat-btn" class="sidebar-btn primary"><i class="fa-solid fa-plus"></i> New Chat</button>
+                <button id="close-sidebar-btn" class="icon-btn mobile-only"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-history-list" id="chat-history-list">
+                <!-- History populated via JS -->
+            </div>
+            <div class="sidebar-footer">
+                <button id="clear-all-btn" class="sidebar-btn danger"><i class="fa-solid fa-trash"></i> Delete All</button>
+            </div>
+        </aside>
+
+        <!-- Main App Area -->
+        <div class="app-container" id="main-app">
+            <!-- Header Section -->
+            <header class="app-header">
+                <div class="brand">
+                    <button id="open-sidebar-btn" class="icon-btn" style="margin-right: 10px;"><i class="fa-solid fa-bars"></i></button>
+                    <div class="brand-logo-container">
+                         <i class="fa-solid fa-shield-halved brand-icon"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h1>ChatZen</h1>
+                        <span class="subtitle" id="chat-title-header">New Chat</span>
+                    </div>
+                </div>
+                
+                <div class="header-center">
+                    <div id="deploy-pill" class="badge deploy-badge tooltip" title="Ready for Global GitHub Launch">
+                        <i class="fa-solid fa-rocket"></i> Deploy Ready
+                    </div>
+                </div>
+                
+                <div class="header-controls">
+                    <div id="group-members-container" class="group-members hidden">
+                        <!-- Members populated via JS -->
+                    </div>
+                    <button id="add-member-btn" class="icon-btn tooltip" title="Add Collaborator">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </button>
+                    <button id="settings-btn" class="icon-btn tooltip" title="AI Settings">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                    <button id="mute-btn" class="icon-btn tooltip" title="Toggle Voice Output">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <div class="badge-container" title="Auto-detected Input Language">
+                        <span id="detected-lang-badge" class="badge">Auto: EN</span>
+                    </div>
+                    
+                    <div id="cloud-status" class="cloud-status offline" title="Cloud Sync Status">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    
+                    <div class="translate-toggle-wrapper" title="Real-Time Translation Toggle" style="display: none;">
+                        <label class="switch">
+                            <input type="checkbox" id="translate-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="language-dropdown">
+                        <select id="user-language" title="Set Output/Speech Language">
+                            <option value="en-US">English</option>
+                            <option value="hi-IN">Hindi</option>
+                            <option value="te-IN">Telugu</option>
+                            <option value="ta-IN">Tamil</option>
+                            <option value="es-ES">Spanish</option>
+                            <option value="fr-FR">French</option>
+                            <option value="de-DE">German</option>
+                            <option value="zh-CN">Chinese</option>
+                            <option value="ja-JP">Japanese</option>
+                            <option value="ar-SA">Arabic</option>
+                            <option value="ru-RU">Russian</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chat Area -->
+            <main class="chat-container" id="chat-container">
+                <!-- Messages populated via JS -->
+            </main>
+
+            <!-- Input Area -->
+            <footer class="input-area">
+                <div id="typing-indicator" class="typing-indicator hidden">
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
+                <div class="input-wrapper">
+                    <button id="attach-btn" class="icon-btn tooltip" title="Upload Photo/Video">
+                        <i class="fa-solid fa-paperclip"></i>
+                        <input type="file" id="media-upload" accept="image/*,video/*" hidden>
+                    </button>
+                    <button id="video-edit-btn" class="icon-btn tooltip" title="VidGen Studio (Video Editor)">
+                        <i class="fa-solid fa-video"></i>
+                    </button>
+                    <button id="mic-btn" class="icon-btn tooltip" title="Hold to speak">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    <textarea id="chat-input" placeholder="Message ChatZen..." rows="1"></textarea>
+                    <button id="send-btn" class="icon-btn primary-btn tooltip" title="Send message">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                </div>
+                <div class="footer-disclaimer">ChatZen can make mistakes. Consider verifying important information.</div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Media Editor Modal -->
+    <div id="media-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Media Editor</h2>
+                <button id="close-media" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body media-editor-body">
+                <div class="media-preview-container">
+                    <canvas id="media-canvas" class="hidden"></canvas>
+                    <video id="media-video" controls class="hidden"></video>
+                </div>
+                <div class="filter-controls">
+                    <label>Brightness: <input type="range" id="filter-bright" min="0" max="200" value="100"></label>
+                    <label>Contrast: <input type="range" id="filter-contrast" min="0" max="200" value="100"></label>
+                    <label>Grayscale: <input type="range" id="filter-gray" min="0" max="100" value="0"></label>
+                </div>
+                <!-- VidGen Studio Extensions -->
+                <div id="video-controls" class="filter-controls hidden" style="margin-top: 20px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+                    <label>Playback Speed: 
+                        <select id="video-speed" style="width: 100px;">
+                            <option value="0.5">0.5x</option>
+                            <option value="1" selected>1.0x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2.0x</option>
+                        </select>
+                    </label>
+                    <label>Trim Start (s): <input type="number" id="video-start" value="0" min="0" style="width: 70px;"></label>
+                    <label>Trim End (s): <input type="number" id="video-end" value="0" min="0" style="width: 70px;"></label>
+                    <button id="mute-video-toggle" class="sidebar-btn" style="padding: 5px; font-size: 0.8rem;"><i class="fa-solid fa-volume-mute"></i> Mute Video</button>
+                </div>
+                <button id="send-media-btn" class="primary-btn" style="width: 100%; margin-top: 15px;">Apply & Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>ChatZen Settings</h2>
+                <button id="close-settings" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Google Gemini API Key:</p>
+                <input type="password" id="api-key-input" placeholder="AIzaSy... (Gemini API Key)" />
+                
+                <p style="margin-top:15px;">OpenAI API Key (GPT-4o/mini):</p>
+                <input type="password" id="openai-key-input" placeholder="sk-... (OpenAI API Key)" />
+                
+                <h3 style="margin-top:20px; font-size: 1rem; color: var(--primary);">Cloud Connection (Full-Stack Mode)</h3>
+                <p>Enter your Supabase credentials to enable real-time group sync and persistent cloud storage.</p>
+                <input type="text" id="supabase-url-input" placeholder="https://your-id.supabase.co" style="margin-bottom:10px;" />
+                <input type="password" id="supabase-key-input" placeholder="anon-public-key" />
+                
+                <p style="margin-top:15px;">GNews API Key (optional):</p>
+                <input type="password" id="gnews-key-input" placeholder="GNews API Key" />
+                
+                <button id="save-key-btn" class="primary-btn" style="width: 100%; margin-top: 20px;">Save & Connect</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="languages.js"></script>
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
