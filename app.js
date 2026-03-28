@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const badge = document.getElementById('detected-lang-badge');
     const languageDropdown = document.getElementById('user-language');
     const muteBtn = document.getElementById('mute-btn');
+    const locationBtn = document.getElementById('location-btn');
     
     // Sidebar
     const sidebar = document.getElementById('sidebar');
@@ -78,6 +79,24 @@ document.addEventListener('DOMContentLoaded', () => {
         this.style.height = (this.scrollHeight < 200 ? this.scrollHeight : 200) + 'px';
         sendBtn.classList.toggle('disabled', this.value.trim() === '');
     });
+
+    // Hardware GPS Sensor
+    if (locationBtn) {
+        locationBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) return alert("Your browser does not support GPS sensors.");
+            // Send a temporary loading message
+            chatInput.value = "Pinging GPS Satellites... 🛰️";
+            navigator.geolocation.getCurrentPosition((pos) => {
+                chatInput.value = '';
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                handleSend(`📍 My current GPS coordinates are:\n\n<MAP ${lat},${lon},My Location>`);
+            }, (err) => {
+                chatInput.value = '';
+                alert("GPS Location denied or failed. Please allow Location permissions in your browser.");
+            });
+        });
+    }
 
     // Sidebar & Session Logic
     async function saveSessions() {
@@ -689,6 +708,7 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
         const systemPrompt = `You are LAY, a super friendly, warm, and chill AI buddy. You talk exactly like a close human friend having a real conversation - casual, cheerful, caring, and expressive. Use emojis naturally when it feels right. Be genuinely enthusiastic and fun! 
 IMPORTANT: ALWAYS reply in the EXACT SAME LANGUAGE the user types in. If they use Hindi, reply in Hindi. Telugu means Telugu. Spanish means Spanish. NEVER switch to English unless they wrote in English.
 Image generation: If the user wants to see a picture of something, embed it like: ![description](https://image.pollinations.ai/prompt/URL_ENCODED_DESCRIPTION)
+If the user asks you to change the background or wallpaper, output exactly: <EXECUTE_CMD>CHANGE_BG:image_url</EXECUTE_CMD>
 You can also format code nicely in markdown code blocks. But mostly - just be real, warm, and totally human!`;
         const payload = { systemInstruction: { parts: [{ text: systemPrompt }] }, contents: [] };
         
@@ -709,7 +729,18 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
             const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = await res.json();
             if (data.error) return "API Error: " + data.error.message;
-            return data.candidates[0].content.parts[0].text;
+            let aiText = data.candidates[0].content.parts[0].text;
+            
+            // Dynamic UI Manipulation Loop
+            const cmdRegex = /<EXECUTE_CMD>CHANGE_BG:(.*?)<\/EXECUTE_CMD>/g;
+            let match;
+            while ((match = cmdRegex.exec(aiText)) !== null) {
+                const bgElement = document.getElementById('dynamic-bg');
+                if (bgElement) bgElement.style.backgroundImage = `url('${match[1].trim()}')`;
+            }
+            aiText = aiText.replace(/<EXECUTE_CMD>.*?<\/EXECUTE_CMD>/g, '').trim();
+            
+            return aiText;
         } catch (e) { return "Network Error."; }
     }
 
@@ -733,6 +764,13 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         
         // Links
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+        
+        // Maps
+        const mapRegex = /&lt;MAP\s+([^,]+),([^,]+),([^&]+)&gt;/gi;
+        html = html.replace(mapRegex, (match, lat, lon, label) => {
+            return `<div class="chat-map map-container" data-lat="${lat}" data-lon="${lon}" data-label="${label.replace(/&gt;/g, '')}"></div>`;
+        });
+
         html = html.replace(/\n\n/g, "<p></p>");
         html = html.replace(/\n/g, "<br>");
         
@@ -784,6 +822,23 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         
         chatContainer.appendChild(msgRow);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Render Leaflet Maps
+        setTimeout(() => {
+            msgRow.querySelectorAll('.chat-map:not(.leaflet-container)').forEach(mapEl => {
+                const lat = parseFloat(mapEl.dataset.lat);
+                const lon = parseFloat(mapEl.dataset.lon);
+                // Leaflet Map Init
+                const map = L.map(mapEl).setView([lat, lon], 14);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap & CARTO'
+                }).addTo(map);
+                L.marker([lat, lon]).addTo(map).bindPopup(mapEl.dataset.label).openPopup();
+                
+                // Force recalculate boundary size after CSS transition
+                setTimeout(() => map.invalidateSize(), 300);
+            });
+        }, 50);
 
         if (save) {
             const s = sessions.find(s => s.id === currentSessionId);

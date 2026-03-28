@@ -177,9 +177,18 @@ const CHATZEN_APIS = {
         if (defMatch) {
             return { type: 'define', data: { word: defMatch[1].trim() } };
         }
+        // Map
+        if (/map of|show me a map|where is|navigate to/.test(t)) {
+            const query = t.replace(/map of|show me (a )?map( of)?|where is|navigate to|find/gi, '').replace(/\?/g, '').trim();
+            if (query && query !== 'me' && query !== 'i') return { type: 'map', data: { query } };
+        }
+        // Where am I currently?
+        if (/where am i|my location|current location/.test(t)) {
+            return { type: 'where_am_i' };
+        }
         // Image generation
-        if (/generate (an? )?image|create (an? )?image|draw|make (an? )?picture|show me (an? )?/.test(t)) {
-            const subject = t.replace(/generate (an? )?image of|create (an? )?image of|draw (an? )?|make (an? )?picture of|show me (an? )?/gi, '').trim();
+        if (/generate (an? )?image|create (an? )?image|draw|make (an? )?picture|show me (an? )?(picture|image|drawing|photo)/.test(t)) {
+            const subject = t.replace(/generate (an? )?image of|create (an? )?image of|draw (an? )?|make (an? )?picture of|show me (an? )?(picture|image|drawing|photo)( of)?/gi, '').trim();
             return { type: 'image', data: { prompt: subject } };
         }
         // Joke
@@ -262,6 +271,27 @@ const CHATZEN_APIS = {
                     result += `**${i+1}. ${a.title}**\n${a.description}\n[Read →](${a.url})\n\n`;
                 });
                 return result;
+            }
+            case 'map': {
+                try {
+                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(intent.data.query)}&format=json&limit=1`);
+                    const geoData = await geoRes.json();
+                    if (!geoData.length) return null;
+                    const { lat, lon, display_name } = geoData[0];
+                    return `📍 Here is the map for **${display_name}**:\n\n<MAP ${lat},${lon},${display_name}>`;
+                } catch (e) { return null; }
+            }
+            case 'where_am_i': {
+                const loc = await this.getLocation();
+                if (!loc) return null;
+                try {
+                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc.city + ' ' + loc.country)}&format=json&limit=1`);
+                    const geoData = await geoRes.json();
+                    if (geoData.length) {
+                        return `You appear to be in **${loc.city}, ${loc.country}** based on your network ping.\n\n<MAP ${geoData[0].lat},${geoData[0].lon},${loc.city}>`;
+                    }
+                } catch(e) {}
+                return `You appear to be in **${loc.city}, ${loc.country}**!`;
             }
             default: return null;
         }

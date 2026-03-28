@@ -6,6 +6,8 @@
     <title>ChatZen - Smart AI Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet.js Mapping Library CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="style.css?v=2">
     <!-- PeerJS for Serverless P2P Networking -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -130,9 +132,8 @@
                     <button id="video-edit-btn" class="icon-btn tooltip" title="VidGen Studio (Video Editor)">
                         <i class="fa-solid fa-video"></i>
                     </button>
-                    <button id="mic-btn" class="icon-btn tooltip" title="Hold to speak">
-                        <i class="fa-solid fa-microphone"></i>
-                    </button>
+                    <button id="mic-btn" class="icon-btn" title="Voice Input"><i class="fa-solid fa-microphone"></i></button>
+                    <button id="location-btn" class="icon-btn" title="Share Location"><i class="fa-solid fa-location-arrow"></i></button>
                     <textarea id="chat-input" placeholder="Message ChatZen..." rows="1"></textarea>
                     <button id="send-btn" class="icon-btn primary-btn tooltip" title="Send message">
                         <i class="fa-solid fa-arrow-up"></i>
@@ -205,6 +206,22 @@
         </div>
     </div>
 
+    <!-- P2P Guest Login Modal -->
+    <div id="p2p-login-modal" class="modal hidden" style="z-index: 9999; backdrop-filter: blur(15px);">
+        <div class="modal-content" style="text-align: center; border-color: var(--primary); max-width: 400px;">
+            <div class="modal-header" style="justify-content: center;">
+                <h2 style="color: var(--primary);">Join Workspace 🚀</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">Your Host has invited you to a P2P Secure Chat. Enter a display name to join.</p>
+                <input type="text" id="p2p-username-input" placeholder="Your Display Name" style="font-size: 1.2rem; text-align: center;" />
+                <button id="p2p-join-btn" class="primary-btn" style="width: 100%; margin-top: 20px; font-size: 1.1rem; padding: 15px;">Enter Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet.js Framework -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="languages.js?v=2"></script>
     <script src="api.js?v=2"></script>
     <script src="app.js?v=2"></script>
