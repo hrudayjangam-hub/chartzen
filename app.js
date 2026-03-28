@@ -263,6 +263,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 createNewSession();
                 if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
                 setTimeout(() => alert("A collaborator cleared the shared workspace."), 100);
+            } else if (data.type === 'typing') {
+                const typingBox = document.getElementById('p2p-typing-indicator');
+                if (typingBox) {
+                    typingBox.textContent = `${data.name} is typing...`;
+                    typingBox.classList.remove('hidden');
+                    if (window.p2pTypingTimeout) clearTimeout(window.p2pTypingTimeout);
+                    window.p2pTypingTimeout = setTimeout(() => { typingBox.classList.add('hidden'); }, 2500);
+                }
+                if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
             }
         });
         conn.on('close', () => { p2pConnections = p2pConnections.filter(c => c !== conn); });
@@ -428,6 +437,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Chat Logic
+    let lastTypingTime = 0;
+    chatInput.addEventListener('input', () => {
+        if (chatInput.value.length > 0 && p2pConnections.length > 0) {
+            const now = Date.now();
+            if (now - lastTypingTime > 1500) {
+                lastTypingTime = now;
+                const s = sessions.find(sid => sid.id === currentSessionId);
+                const activeMember = s ? (s.members.find(m => m.id === s.activeMemberId) || s.members[0]) : { name: 'Someone' };
+                p2pConnections.forEach(c => c.send({ type: 'typing', name: activeMember.name }));
+            }
+        }
+    });
+
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();

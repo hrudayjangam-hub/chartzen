@@ -6,7 +6,7 @@
     <title>ChatZen - Smart AI Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <!-- PeerJS for Serverless P2P Networking -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
@@ -118,6 +118,7 @@
 
             <!-- Input Area -->
             <footer class="input-area">
+                <div id="p2p-typing-indicator" class="p2p-typing hidden">Someone is typing...</div>
                 <div id="typing-indicator" class="typing-indicator hidden">
                     <div class="typing-dots"><span></span><span></span><span></span></div>
                 </div>
@@ -204,8 +205,8 @@
         </div>
     </div>
 
-    <script src="languages.js"></script>
-    <script src="api.js"></script>
-    <script src="app.js"></script>
+    <script src="languages.js?v=2"></script>
+    <script src="api.js?v=2"></script>
+    <script src="app.js?v=2"></script>
 </body>
 </html>
