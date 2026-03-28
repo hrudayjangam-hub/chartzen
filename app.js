@@ -42,6 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMediaBtn = document.getElementById('send-media-btn');
     const groupMembersContainer = document.getElementById('group-members-container');
     const addMemberBtn = document.getElementById('add-member-btn');
+    const shareRoomBtn = document.getElementById('share-room-btn');
+    const translateToggle = document.getElementById('translate-toggle');
     const videoControls = document.getElementById('video-controls');
     const videoSpeed = document.getElementById('video-speed');
     const videoStart = document.getElementById('video-start');
@@ -194,19 +196,50 @@ document.addEventListener('DOMContentLoaded', () => {
     openSidebarBtn.addEventListener('click', () => sidebar.classList.add('open'));
     closeSidebarBtn.addEventListener('click', () => sidebar.classList.remove('open'));
 
-    // Initialization
-    if (sessions.length === 0 || !currentSessionId) {
-        createNewSession();
+    // Initialization & Collab-Link Deep Linking
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room');
+
+    if (roomId) {
+        if (!supabaseUrl || !supabaseKey) {
+            alert("Collab-Link: You need to configure your Cloud Connection in settings first to join this room.");
+            settingsModal.classList.remove('hidden');
+        } else {
+            console.log("Collab-Link activated. Joining room:", roomId);
+            initSupabase(supabaseUrl, supabaseKey).then(() => {
+                loadCloudRoom(roomId);
+            });
+        }
     } else {
-        loadSession(currentSessionId);
-    }
-    
-    // Auto-connect Supabase if keys exist
-    if (supabaseUrl && supabaseKey) {
-        initSupabase(supabaseUrl, supabaseKey);
+        if (sessions.length === 0 || !currentSessionId) {
+            createNewSession();
+        } else {
+            loadSession(currentSessionId);
+        }
+        
+        // Auto-connect Supabase if keys exist
+        if (supabaseUrl && supabaseKey) {
+            initSupabase(supabaseUrl, supabaseKey);
+        }
     }
 
     sendBtn.classList.add('disabled');
+    
+    if (shareRoomBtn) {
+        shareRoomBtn.addEventListener('click', () => {
+            if (!currentSessionId) return;
+            const url = window.location.origin + window.location.pathname + '?room=' + currentSessionId;
+            navigator.clipboard.writeText(url).then(() => {
+                const originalTitle = shareRoomBtn.title;
+                shareRoomBtn.title = "Link Copied!";
+                shareRoomBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => {
+                    shareRoomBtn.title = originalTitle;
+                    shareRoomBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+                }, 2000);
+            });
+        });
+    }
 
     settingsBtn.addEventListener('click', () => {
         apiKeyInput.value = geminiApiKey;
@@ -241,6 +274,52 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error("Supabase Connection Failed:", e);
             cloudStatus.classList.replace('online', 'offline');
+        }
+    }
+    
+    async function loadCloudRoom(roomId) {
+        if (!supabaseClient) return;
+        try {
+            const { data: sessionData, error: sessionError } = await supabaseClient.from('chatzen_sessions').select('*').eq('id', roomId).single();
+            if (sessionError || !sessionData) {
+                alert("Room not found or you don't have access.");
+                return;
+            }
+            
+            let localSession = sessions.find(s => s.id === roomId);
+            if (!localSession) {
+                const { data: msgData } = await supabaseClient.from('chatzen_messages').select('*').eq('session_id', roomId).order('created_at', { ascending: true });
+                
+                localSession = {
+                    id: sessionData.id,
+                    title: sessionData.title,
+                    tags: sessionData.tags || [],
+                    members: sessionData.members || [{ id: 'default', name: 'You', avatar: 'fa-user' }],
+                    activeMemberId: 'default',
+                    messages: []
+                };
+                
+                if (msgData) {
+                    msgData.forEach(msg => {
+                        localSession.messages.push({
+                            id: msg.id,
+                            text: msg.text,
+                            sender: msg.sender,
+                            media: msg.media,
+                            memberName: msg.member_name
+                        });
+                    });
+                }
+                sessions.unshift(localSession);
+                saveSessions();
+                renderSidebar();
+            }
+            
+            loadSession(roomId);
+            setTimeout(() => alert("You have joined a Shared Workspace!"), 500);
+            
+        } catch(e) {
+            console.error("Error loading shared room:", e);
         }
     }
 
