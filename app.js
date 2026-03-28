@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const groupMembersContainer = document.getElementById('group-members-container');
     const addMemberBtn = document.getElementById('add-member-btn');
     const shareRoomBtn = document.getElementById('share-room-btn');
+    const aiAssistToggle = document.getElementById('ai-assist-toggle');
     const translateToggle = document.getElementById('translate-toggle');
     const videoControls = document.getElementById('video-controls');
     const videoSpeed = document.getElementById('video-speed');
@@ -457,7 +458,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         addMessage(`Uploaded ${currentMediaType} via VidGen Studio`, 'user', true, { type: currentMediaType, data: mediaData, metadata }, activeMember.name);
         
-        triggerAIResponse(`I just edited a ${currentMediaType} with: Speed=${videoSpeed.value}x, Trim=${videoStart.value}s-${videoEnd.value}s.`);
+        if (!aiAssistToggle || aiAssistToggle.checked) {
+            triggerAIResponse(`I just edited a ${currentMediaType} with: Speed=${videoSpeed.value}x, Trim=${videoStart.value}s-${videoEnd.value}s.`);
+        }
     });
 
     // Chat Logic
@@ -489,7 +492,9 @@ document.addEventListener('DOMContentLoaded', () => {
             saveSessions();
         }
 
-        triggerAIResponse(text);
+        if (!aiAssistToggle || aiAssistToggle.checked) {
+            triggerAIResponse(text);
+        }
     }
 
     function subscribeToGroupSync() {
@@ -676,8 +681,18 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
 
     async function addMessage(text, sender, save = true, media = null, memberName = null, msgId = null, pushToCloud = true) {
         const id = msgId || Date.now().toString() + Math.random().toString(36).substr(2, 5);
+        
+        const s = sessions.find(s => s.id === currentSessionId);
+        const activeMember = s ? (s.members.find(m => m.id === s.activeMemberId) || s.members[0]) : { name: 'You' };
+        
+        let alignmentClass = '';
+        if (sender === 'user') {
+            const isMine = (memberName === activeMember.name) || (!memberName && activeMember.name === 'You');
+            alignmentClass = isMine ? 'my-message' : 'their-message';
+        }
+
         const msgRow = document.createElement('div');
-        msgRow.className = `message-row ${sender}-message`;
+        msgRow.className = `message-row ${sender}-message ${alignmentClass}`;
         msgRow.dataset.msgId = id;
         
         let contentHtml = '';
