@@ -57,9 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let geminiApiKey = localStorage.getItem('chatzenGeminiKey') || '';
     let openAiApiKey = localStorage.getItem('chatzenOpenAIKey') || '';
     let gnewsKey = localStorage.getItem('chatzenGnewsKey') || '';
-    let supabaseUrl = localStorage.getItem('chatzenSupabaseUrl') || '';
-    let supabaseKey = localStorage.getItem('chatzenSupabaseKey') || '';
-    let supabaseClient = null;
+    
+    // Serverless WebRTC State (PeerJS)
+    let peer = null;
+    let p2pConnections = [];
+    let isHost = false;
     
     let synth = window.speechSynthesis;
     let isMuted = false;
@@ -79,21 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function saveSessions() {
         localStorage.setItem('chatzenChatSessions', JSON.stringify(sessions));
         localStorage.setItem('chatzenCurrentSessionId', currentSessionId);
-        
-        if (supabaseClient) {
-            try {
-                const s = sessions.find(s => s.id === currentSessionId);
-                if (s) {
-                    await supabaseClient.from('chatzen_sessions').upsert({
-                        id: s.id,
-                        title: s.title,
-                        tags: s.tags,
-                        members: s.members,
-                        active_member_id: s.activeMemberId
-                    });
-                }
-            } catch (e) { console.error("Cloud Sync Error (Session):", e); }
-        }
         
         renderSidebar();
     }
@@ -201,27 +188,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomId = urlParams.get('room');
 
-    if (roomId) {
-        if (!supabaseUrl || !supabaseKey) {
-            alert("Collab-Link: You need to configure your Cloud Connection in settings first to join this room.");
-            settingsModal.classList.remove('hidden');
+    function initPeerJS(hostId = null) {
+        if (!window.Peer) { console.error("PeerJS not loaded"); return; }
+        const p2pStatus = document.getElementById('p2p-status-box');
+        
+        if (hostId) {
+            // Client Mode
+            peer = new window.Peer();
+            isHost = false;
+            peer.on('open', (id) => {
+                if(p2pStatus) p2pStatus.textContent = "Status: Connecting to Host WebRTC...";
+                cloudStatus.classList.replace('offline', 'online');
+                cloudStatus.title = "P2P WebRTC Connected";
+                
+                const conn = peer.connect(hostId);
+                conn.on('open', () => {
+                    p2pConnections.push(conn);
+                    if(p2pStatus) p2pStatus.textContent = "Status: Connected to Room Host.";
+                });
+                setupConnectionListeners(conn);
+            });
         } else {
-            console.log("Collab-Link activated. Joining room:", roomId);
-            initSupabase(supabaseUrl, supabaseKey).then(() => {
-                loadCloudRoom(roomId);
+            // Host Mode
+            if (sessions.length === 0 || !currentSessionId) createNewSession();
+            else loadSession(currentSessionId);
+            
+            const hostPeerId = "chatzen-host-" + currentSessionId;
+            peer = new window.Peer(hostPeerId);
+            isHost = true;
+            
+            peer.on('open', (id) => {
+                if(p2pStatus) p2pStatus.textContent = "Status: Hosting P2P Room.";
+                cloudStatus.classList.replace('offline', 'online');
+                cloudStatus.title = "Hosting P2P Room";
+            });
+            
+            peer.on('connection', (conn) => {
+                console.log("New Client Connected via P2P");
+                p2pConnections.push(conn);
+                setupConnectionListeners(conn);
+                const s = sessions.find(sid => sid.id === currentSessionId);
+                if(s) conn.send({ type: 'sync_history', session: s });
             });
         }
+    }
+    
+    function setupConnectionListeners(conn) {
+        conn.on('data', (data) => {
+            if (data.type === 'sync_history') {
+                const s = data.session;
+                let localSession = sessions.find(sid => sid.id === s.id);
+                if (!localSession) {
+                    sessions.unshift(s);
+                    saveSessions();
+                    renderSidebar();
+                }
+                loadSession(s.id);
+                setTimeout(() => alert("You have joined the P2P Room!"), 500);
+            } else if (data.type === 'chat_message') {
+                const m = data.msg;
+                const s = sessions.find(sid => sid.id === m.session_id);
+                if (s && m.session_id === currentSessionId) {
+                    if (!s.messages.find(ms => ms.id === m.id)) {
+                        addMessage(m.text, m.sender, true, m.media, m.member_name, m.id, false);
+                    }
+                }
+                if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
+            }
+        });
+        conn.on('close', () => { p2pConnections = p2pConnections.filter(c => c !== conn); });
+    }
+
+    if (roomId) {
+         currentSessionId = roomId; 
+         setTimeout(() => initPeerJS("chatzen-host-" + roomId), 1000);
     } else {
-        if (sessions.length === 0 || !currentSessionId) {
-            createNewSession();
-        } else {
-            loadSession(currentSessionId);
-        }
-        
-        // Auto-connect Supabase if keys exist
-        if (supabaseUrl && supabaseKey) {
-            initSupabase(supabaseUrl, supabaseKey);
-        }
+         setTimeout(() => initPeerJS(null), 1000);
     }
 
     sendBtn.classList.add('disabled');
@@ -234,10 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const originalTitle = shareRoomBtn.title;
                 shareRoomBtn.title = "Link Copied!";
                 shareRoomBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                setTimeout(() => {
-                    shareRoomBtn.title = originalTitle;
-                    shareRoomBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
-                }, 2000);
+                setTimeout(() => { shareRoomBtn.title = originalTitle; shareRoomBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>'; }, 2000);
             });
         });
     }
@@ -245,8 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsBtn.addEventListener('click', () => {
         apiKeyInput.value = geminiApiKey;
         if (openAiKeyInput) openAiKeyInput.value = openAiApiKey;
-        if (supabaseUrlInput) supabaseUrlInput.value = supabaseUrl;
-        if (supabaseKeyInput) supabaseKeyInput.value = supabaseKey;
         const gnewsInput = document.getElementById('gnews-key-input');
         if (gnewsInput) gnewsInput.value = gnewsKey;
         settingsModal.classList.remove('hidden');
@@ -254,95 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
 
-    async function initSupabase(url, key) {
-        try {
-            const { createClient } = window.supabase;
-            supabaseClient = createClient(url, key);
-            
-            // Test connection
-            const { data, error } = await supabaseClient.from('chatzen_sessions').select('id').limit(1);
-            if (error && error.message.includes('relation "chatzen_sessions" does not exist')) {
-                console.warn("Supabase connected, but tables not found. Running in localStorage fallback.");
-                return;
-            }
-            
-            cloudStatus.classList.replace('offline', 'online');
-            cloudStatus.title = "Connected to Supabase Cloud";
-            console.log("ChatZen Full-Stack Mode: ONLINE");
-            
-            // Start real-time sync
-            subscribeToGroupSync();
-        } catch (e) {
-            console.error("Supabase Connection Failed:", e);
-            cloudStatus.classList.replace('online', 'offline');
-        }
-    }
-    
-    async function loadCloudRoom(roomId) {
-        if (!supabaseClient) return;
-        try {
-            const { data: sessionData, error: sessionError } = await supabaseClient.from('chatzen_sessions').select('*').eq('id', roomId).single();
-            if (sessionError || !sessionData) {
-                alert("Room not found or you don't have access.");
-                return;
-            }
-            
-            let localSession = sessions.find(s => s.id === roomId);
-            if (!localSession) {
-                const { data: msgData } = await supabaseClient.from('chatzen_messages').select('*').eq('session_id', roomId).order('created_at', { ascending: true });
-                
-                localSession = {
-                    id: sessionData.id,
-                    title: sessionData.title,
-                    tags: sessionData.tags || [],
-                    members: sessionData.members || [{ id: 'default', name: 'You', avatar: 'fa-user' }],
-                    activeMemberId: 'default',
-                    messages: []
-                };
-                
-                if (msgData) {
-                    msgData.forEach(msg => {
-                        localSession.messages.push({
-                            id: msg.id,
-                            text: msg.text,
-                            sender: msg.sender,
-                            media: msg.media,
-                            memberName: msg.member_name
-                        });
-                    });
-                }
-                sessions.unshift(localSession);
-                saveSessions();
-                renderSidebar();
-            }
-            
-            loadSession(roomId);
-            setTimeout(() => alert("You have joined a Shared Workspace!"), 500);
-            
-        } catch(e) {
-            console.error("Error loading shared room:", e);
-        }
-    }
-
     saveKeyBtn.addEventListener('click', () => {
         geminiApiKey = apiKeyInput.value.trim();
         localStorage.setItem('chatzenGeminiKey', geminiApiKey);
-        
         openAiApiKey = openAiKeyInput.value.trim();
         localStorage.setItem('chatzenOpenAIKey', openAiApiKey);
-        
-        supabaseUrl = supabaseUrlInput.value.trim();
-        supabaseKey = supabaseKeyInput.value.trim();
-        localStorage.setItem('chatzenSupabaseUrl', supabaseUrl);
-        localStorage.setItem('chatzenSupabaseKey', supabaseKey);
-
         const gnewsInput = document.getElementById('gnews-key-input');
         if (gnewsInput) { gnewsKey = gnewsInput.value.trim(); localStorage.setItem('chatzenGnewsKey', gnewsKey); }
-        
-        if (supabaseUrl && supabaseKey) {
-            initSupabase(supabaseUrl, supabaseKey);
-        }
-
         settingsModal.classList.add('hidden');
     });
 
@@ -731,17 +686,13 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
                     s.messages.push(msgObj);
                     saveSessions();
 
-                    if (supabaseClient && pushToCloud) {
-                        try {
-                            await supabaseClient.from('chatzen_messages').insert({
-                                id,
-                                session_id: currentSessionId,
-                                text,
-                                sender,
-                                media,
-                                member_name: memberName
-                            });
-                        } catch (e) { console.error("Cloud Sync Error (Message):", e); }
+                    if (pushToCloud) {
+                        const payload = { type: 'chat_message', msg: { id, session_id: currentSessionId, text, sender, media, member_name: memberName } };
+                        if (isHost) {
+                            p2pConnections.forEach(c => c.send(payload));
+                        } else if (peer && p2pConnections.length > 0) {
+                            p2pConnections[0].send(payload);
+                        }
                     }
                 }
             }

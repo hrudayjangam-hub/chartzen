@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase Serverless Full-Stack SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- PeerJS for Serverless P2P Networking -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div id="dynamic-bg"></div>
@@ -192,10 +192,9 @@
                 <p style="margin-top:15px;">OpenAI API Key (GPT-4o/mini):</p>
                 <input type="password" id="openai-key-input" placeholder="sk-... (OpenAI API Key)" />
                 
-                <h3 style="margin-top:20px; font-size: 1rem; color: var(--primary);">Cloud Connection (Full-Stack Mode)</h3>
-                <p>Enter your Supabase credentials to enable real-time group sync and persistent cloud storage.</p>
-                <input type="text" id="supabase-url-input" placeholder="https://your-id.supabase.co" style="margin-bottom:10px;" />
-                <input type="password" id="supabase-key-input" placeholder="anon-public-key" />
+                <h3 style="margin-top:20px; font-size: 1rem; color: var(--primary);">Peer-to-Peer Networking (P2P)</h3>
+                <p>ChatZen operates as a WebRTC Serverless mesh. Your chat is instantly synced to any teammates with the exact Room Link without a central database.</p>
+                <p id="p2p-status-box" style="margin-top:10px; font-size: 0.8rem; font-family: monospace; color: var(--secondary);">Status: Disconnected</p>
                 
                 <p style="margin-top:15px;">GNews API Key (optional):</p>
                 <input type="password" id="gnews-key-input" placeholder="GNews API Key" />
