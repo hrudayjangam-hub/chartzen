@@ -662,7 +662,13 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         const s = sessions.find(s => s.id === currentSessionId);
         if (s) {
             s.messages.slice(-10).forEach(msg => {
-                payload.contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
+                const mappedRole = msg.sender === 'user' ? 'user' : 'model';
+                const lastContent = payload.contents[payload.contents.length - 1];
+                if (lastContent && lastContent.role === mappedRole) {
+                    lastContent.parts[0].text += '\n\n' + msg.text;
+                } else {
+                    payload.contents.push({ role: mappedRole, parts: [{ text: msg.text }] });
+                }
             });
         }
 
