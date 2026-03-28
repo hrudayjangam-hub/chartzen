@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let geminiApiKey = localStorage.getItem('chatzenGeminiKey') || '';
     let openAiApiKey = localStorage.getItem('chatzenOpenAIKey') || '';
     let gnewsKey = localStorage.getItem('chatzenGnewsKey') || '';
+    let p2pUsername = localStorage.getItem('chatzenP2PUsername') || null;
     
     // Serverless WebRTC State (PeerJS)
     let peer = null;
@@ -181,9 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     newChatBtn.addEventListener('click', () => { createNewSession(); sidebar.classList.remove('open'); });
     clearAllBtn.addEventListener('click', () => { 
+        if (p2pConnections.length > 0 && !isHost) {
+            alert("Only the Room Host can wipe the network.");
+            return;
+        }
         sessions = []; 
         createNewSession(); 
-        p2pConnections.forEach(c => c.send({ type: 'clear_chat' }));
+        const s = sessions[0];
+        p2pConnections.forEach(c => c.send({ type: 'clear_chat', newSession: s }));
     });
     openSidebarBtn.addEventListener('click', () => sidebar.classList.add('open'));
     closeSidebarBtn.addEventListener('click', () => sidebar.classList.remove('open'));
@@ -259,10 +265,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
             } else if (data.type === 'clear_chat') {
-                sessions = [];
-                createNewSession();
+                if (data.newSession) {
+                    sessions = [data.newSession];
+                    currentSessionId = data.newSession.id;
+                    saveSessions();
+                    renderSidebar();
+                    loadSession(currentSessionId);
+                } else {
+                    sessions = [];
+                    createNewSession();
+                }
                 if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
-                setTimeout(() => alert("A collaborator cleared the shared workspace."), 100);
+                setTimeout(() => alert("The Host cleared the shared workspace."), 100);
             } else if (data.type === 'typing') {
                 const typingBox = document.getElementById('p2p-typing-indicator');
                 if (typingBox) {
@@ -277,11 +291,29 @@ document.addEventListener('DOMContentLoaded', () => {
         conn.on('close', () => { p2pConnections = p2pConnections.filter(c => c !== conn); });
     }
 
+    function checkP2PLogin(hostId) {
+        if (hostId && !p2pUsername) {
+            const modal = document.getElementById('p2p-login-modal');
+            modal.classList.remove('hidden');
+            document.getElementById('p2p-join-btn').addEventListener('click', () => {
+                const val = document.getElementById('p2p-username-input').value.trim();
+                if (val) {
+                    p2pUsername = val;
+                    localStorage.setItem('chatzenP2PUsername', p2pUsername);
+                    modal.classList.add('hidden');
+                    initPeerJS(hostId);
+                }
+            });
+        } else {
+            initPeerJS(hostId);
+        }
+    }
+
     if (roomId) {
          currentSessionId = roomId; 
-         setTimeout(() => initPeerJS("chatzen-host-" + roomId), 1000);
+         setTimeout(() => checkP2PLogin("chatzen-host-" + roomId), 1000);
     } else {
-         setTimeout(() => initPeerJS(null), 1000);
+         setTimeout(() => checkP2PLogin(null), 1000);
     }
 
     sendBtn.classList.add('disabled');
@@ -427,9 +459,10 @@ document.addEventListener('DOMContentLoaded', () => {
         mediaModal.classList.add('hidden');
         
         const s = sessions.find(s => s.id === currentSessionId);
-        const activeMember = s.members.find(m => m.id === s.activeMemberId) || s.members[0];
+        const fallbackName = s ? (s.members.find(m => m.id === s.activeMemberId)?.name || s.members[0]?.name) : 'Guest';
+        const senderName = isHost ? fallbackName : (p2pUsername || fallbackName);
         
-        addMessage(`Uploaded ${currentMediaType} via VidGen Studio`, 'user', true, { type: currentMediaType, data: mediaData, metadata }, activeMember.name);
+        addMessage(`Uploaded ${currentMediaType} via VidGen Studio`, 'user', true, { type: currentMediaType, data: mediaData, metadata }, senderName);
         
         if (!aiAssistToggle || aiAssistToggle.checked) {
             triggerAIResponse(`I just edited a ${currentMediaType} with: Speed=${videoSpeed.value}x, Trim=${videoStart.value}s-${videoEnd.value}s.`);
@@ -444,8 +477,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (now - lastTypingTime > 1500) {
                 lastTypingTime = now;
                 const s = sessions.find(sid => sid.id === currentSessionId);
-                const activeMember = s ? (s.members.find(m => m.id === s.activeMemberId) || s.members[0]) : { name: 'Someone' };
-                p2pConnections.forEach(c => c.send({ type: 'typing', name: activeMember.name }));
+                const fallbackName = s ? (s.members.find(m => m.id === s.activeMemberId)?.name || s.members[0]?.name) : 'Someone';
+                const activeName = isHost ? fallbackName : (p2pUsername || fallbackName);
+                p2pConnections.forEach(c => c.send({ type: 'typing', name: activeName }));
             }
         }
     });
@@ -466,9 +500,10 @@ document.addEventListener('DOMContentLoaded', () => {
         sendBtn.classList.add('disabled');
         
         const s = sessions.find(s => s.id === currentSessionId);
-        const activeMember = s.members.find(m => m.id === s.activeMemberId) || s.members[0];
+        const fallbackName = s ? (s.members.find(m => m.id === s.activeMemberId)?.name || s.members[0]?.name) : 'Guest';
+        const senderName = isHost ? fallbackName : (p2pUsername || fallbackName);
         
-        addMessage(text, 'user', true, null, activeMember.name);
+        addMessage(text, 'user', true, null, senderName);
         
         // Auto-tag & Title
         if (s && s.messages.length === 1) {
@@ -669,11 +704,14 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         const id = msgId || Date.now().toString() + Math.random().toString(36).substr(2, 5);
         
         const s = sessions.find(s => s.id === currentSessionId);
-        const activeMember = s ? (s.members.find(m => m.id === s.activeMemberId) || s.members[0]) : { name: 'You' };
         
         let alignmentClass = '';
         if (sender === 'user') {
-            const isMine = (memberName === activeMember.name) || (!memberName && activeMember.name === 'You');
+            const fallbackName = s ? (s.members.find(m => m.id === s.activeMemberId)?.name || s.members[0]?.name) : 'You';
+            const myRecognizedName = isHost ? fallbackName : (p2pUsername || fallbackName);
+            
+            const realMemberName = memberName || myRecognizedName;
+            const isMine = (realMemberName === myRecognizedName);
             alignmentClass = isMine ? 'my-message' : 'their-message';
         }
 
