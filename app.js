@@ -652,7 +652,7 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
     }
 
     async function getGeminiResponse(userText, targetLang) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
         const systemPrompt = `You are LAY, a super friendly, warm, and chill AI buddy. You talk exactly like a close human friend having a real conversation - casual, cheerful, caring, and expressive. Use emojis naturally when it feels right. Be genuinely enthusiastic and fun! 
 IMPORTANT: ALWAYS reply in the EXACT SAME LANGUAGE the user types in. If they use Hindi, reply in Hindi. Telugu means Telugu. Spanish means Spanish. NEVER switch to English unless they wrote in English.
 Image generation: If the user wants to see a picture of something, embed it like: ![description](https://image.pollinations.ai/prompt/URL_ENCODED_DESCRIPTION)
