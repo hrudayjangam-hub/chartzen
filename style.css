@@ -334,10 +334,31 @@ input[type="password"]:focus, input[type="text"]:focus { border-color: var(--sec
 .mobile-only { display: none; }
 @media (max-width: 768px) {
     .sidebar { position: absolute; left: -280px; height: 100%; }
-    .sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.8); }
+    .sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.8); z-index: 1000;}
     #open-sidebar-btn { display: flex; }
     .mobile-only { display: flex; }
-    .app-header { padding: 15px; }
-    .message-row { padding: 20px 15px; }
-    .input-area { padding: 15px; }
+    
+    /* Header Density Fixes */
+    #deploy-pill, #detected-lang-badge, .header-center { display: none !important; }
+    .app-header { padding: 10px 15px; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+    .brand { gap: 8px; }
+    .brand-icon { font-size: 1.4rem; }
+    .brand-text h1 { font-size: 1.1rem; }
+    
+    /* Control Resizing */
+    .header-controls { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .icon-btn { width: 34px; height: 34px; font-size: 1.1rem; background: rgba(255,255,255,0.05); }
+    .cloud-status { width: 28px; height: 28px; }
+    select { padding: 6px 10px; font-size: 0.8rem; max-width: 100px; text-overflow: ellipsis; }
+    
+    /* Message Row & Chat Scaling */
+    .message-row { padding: 15px 10px; }
+    .message { gap: 15px; }
+    .avatar { width: 30px; height: 30px; font-size: 1rem; }
+    .message-content { font-size: 0.95rem; line-height: 1.5; }
+    
+    /* Input Area Optimization */
+    .input-area { padding: 10px; }
+    .input-wrapper { padding: 8px 10px; border-radius: 16px; gap: 8px; }
+    textarea { font-size: 0.95rem; }
 }
