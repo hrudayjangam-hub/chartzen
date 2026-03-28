@@ -25,7 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modals
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');
+    const guestModal = document.getElementById('guest-modal');
+    const qrModal = document.getElementById('qr-modal');
     const closeSettings = document.getElementById('close-settings');
+
+    // QR Buttons
+    const qrBtn = document.getElementById('qr-btn');
+    const closeQr = document.getElementById('close-qr');
+    
     const saveKeyBtn = document.getElementById('save-key-btn');
     const apiKeyInput = document.getElementById('api-key-input');
     const openAiKeyInput = document.getElementById('openai-key-input');
@@ -93,8 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleSend(`📍 My current GPS coordinates are:\n\n<MAP ${lat},${lon},My Location>`);
             }, (err) => {
                 chatInput.value = '';
-                alert("GPS Location denied or failed. Please allow Location permissions in your browser.");
-            });
+                alert("GPS Request Failed: Your browser blocked access, timed out, or your OS has Location Services disabled.");
+            }, { enableHighAccuracy: false, timeout: 7000, maximumAge: 0 });
         });
     }
 
@@ -349,6 +356,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => { shareRoomBtn.title = originalTitle; shareRoomBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>'; }, 2000);
             });
         });
+    }
+
+    // QR Code Generator Logic
+    if (qrBtn) {
+        qrBtn.addEventListener('click', () => {
+            if (!currentSessionId) return alert("Please create or select a chat session first.");
+            const roomUrl = window.location.origin + window.location.pathname + '?room=' + currentSessionId;
+            const encodedUrl = encodeURIComponent(roomUrl);
+            const qrContainer = document.getElementById('qr-code-container');
+            if (qrContainer) {
+                qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodedUrl}&color=ffffff&bgcolor=1e1e2d" style="border: 4px solid var(--glass-border); border-radius: 12px; width: 250px; height: 250px;" alt="QR Code">`;
+            }
+            const qrLinkText = document.getElementById('qr-link-text');
+            if (qrLinkText) qrLinkText.innerText = roomUrl;
+            if (qrModal) qrModal.classList.remove('hidden');
+        });
+    }
+
+    if (closeQr) {
+        closeQr.addEventListener('click', () => qrModal.classList.add('hidden'));
     }
 
     settingsBtn.addEventListener('click', () => {
