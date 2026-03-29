@@ -230,20 +230,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const p2pStatus = document.getElementById('p2p-status-box');
         
         if (hostId) {
-            // Client Mode
+            // Client Mode (Guest)
             peer = new window.Peer();
             isHost = false;
+            
             peer.on('open', (id) => {
                 if(p2pStatus) p2pStatus.textContent = "Status: Connecting to Host WebRTC...";
                 cloudStatus.classList.replace('offline', 'online');
                 cloudStatus.title = "P2P WebRTC Connected";
                 
-                const conn = peer.connect(hostId);
+                // Attempt to connect to the host
+                const conn = peer.connect(hostId, {
+                    reliable: true
+                });
+                
+                const connectionTimeout = setTimeout(() => {
+                    if (p2pConnections.length === 0) {
+                        if(p2pStatus) p2pStatus.textContent = "Status: Connection Timeout (Retrying...)";
+                        peer.connect(hostId);
+                    }
+                }, 10000);
+
                 conn.on('open', () => {
+                    clearTimeout(connectionTimeout);
                     p2pConnections.push(conn);
                     if(p2pStatus) p2pStatus.textContent = "Status: Connected to Room Host.";
+                    console.log("Joined P2P Room as Guest");
                 });
+
                 setupConnectionListeners(conn);
+            });
+
+            peer.on('error', (err) => {
+                console.error("PeerJS Guest Error:", err);
+                if(p2pStatus) p2pStatus.textContent = "Status: P2P Connection Error.";
             });
         } else {
             // Host Mode
@@ -259,6 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 cloudStatus.classList.replace('offline', 'online');
                 cloudStatus.title = "Hosting P2P Room";
             });
+
+            peer.on('disconnected', () => {
+                if(p2pStatus) p2pStatus.textContent = "Status: Disconnected (Reconnecting...)";
+                peer.reconnect();
+            });
             
             peer.on('connection', (conn) => {
                 console.log("New Client Connected via P2P");
@@ -267,6 +292,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const s = sessions.find(sid => sid.id === currentSessionId);
                 if(s) conn.send({ type: 'sync_history', session: s });
             });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    if(p2pStatus) p2pStatus.textContent = "Status: Host ID Taken (Collision).";
+                } else {
+                    console.error("PeerJS Host Error:", err);
+                    if(p2pStatus) p2pStatus.textContent = "Status: P2P Hosting Error.";
+                }
+            });
         }
     }
     
@@ -274,23 +308,38 @@ document.addEventListener('DOMContentLoaded', () => {
         conn.on('data', (data) => {
             if (data.type === 'sync_history') {
                 const s = data.session;
-                let localSession = sessions.find(sid => sid.id === s.id);
-                if (!localSession) {
+                let localSessionIndex = sessions.findIndex(sid => sid.id === s.id);
+                if (localSessionIndex === -1) {
                     sessions.unshift(s);
-                    saveSessions();
-                    renderSidebar();
+                } else if (sessions[localSessionIndex].messages.length === 0) {
+                    // Overwrite placeholder with real host history
+                    sessions[localSessionIndex] = s;
                 }
+                saveSessions();
+                renderSidebar();
                 loadSession(s.id);
                 setTimeout(() => alert("You have joined the P2P Room!"), 500);
             } else if (data.type === 'chat_message') {
                 const m = data.msg;
                 const s = sessions.find(sid => sid.id === m.session_id);
-                if (s && m.session_id === currentSessionId) {
+                if (s) {
                     if (!s.messages.find(ms => ms.id === m.id)) {
-                        addMessage(m.text, m.sender, true, m.media, m.member_name, m.id, false);
+                        s.messages.push({ id: m.id, text: m.text, sender: m.sender, media: m.media, memberName: m.member_name });
+                        saveSessions();
+                        // If we are currently looking at this session, render it live!
+                        if (m.session_id === currentSessionId) {
+                            addMessage(m.text, m.sender, false, m.media, m.member_name, m.id, false);
+                        } else {
+                            renderSidebar(); // Flash sidebar to indicate new activity
+                        }
                     }
                 }
                 if (isHost) p2pConnections.filter(c => c !== conn).forEach(c => c.send(data));
+            } else if (data.type === 'ai_request') {
+                if (isHost) {
+                    console.log("Host proxying AI request for Guest...");
+                    triggerAIResponse(data.text);
+                }
             } else if (data.type === 'clear_chat') {
                 if (data.newSession) {
                     sessions = [data.newSession];
@@ -338,9 +387,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (roomId) {
          currentSessionId = roomId; 
-         setTimeout(() => checkP2PLogin("chatzen-host-" + roomId), 1000);
+         // Pre-initialize empty session for Guest to avoid addMessage crashes before sync
+         if (!sessions.find(s => s.id === roomId)) {
+             sessions.unshift({ 
+                id: roomId, title: 'Collaborative Space', messages: [], tags: ['P2P'], 
+                members: [{ id: 'host', name: 'Host', avatar: 'fa-user-tie' }], 
+                activeMemberId: 'host' 
+             });
+             saveSessions();
+             renderSidebar();
+         }
+         loadSession(roomId);
+         setTimeout(() => checkP2PLogin("chatzen-host-" + roomId), 500);
     } else {
-         setTimeout(() => checkP2PLogin(null), 1000);
+         setTimeout(() => checkP2PLogin(null), 500);
     }
 
     sendBtn.classList.add('disabled');
@@ -388,6 +448,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (openAiKeyInput) openAiKeyInput.value = openAiApiKey;
         const gnewsInput = document.getElementById('gnews-key-input');
         if (gnewsInput) gnewsInput.value = gnewsKey;
+        
+        const geminiModelSelect = document.getElementById('gemini-model-select');
+        if (geminiModelSelect) {
+            const savedModel = localStorage.getItem('chatzenGeminiModel');
+            if (savedModel) geminiModelSelect.value = savedModel;
+        }
+        
         settingsModal.classList.remove('hidden');
     });
 
@@ -396,9 +463,17 @@ document.addEventListener('DOMContentLoaded', () => {
     saveKeyBtn.addEventListener('click', () => {
         geminiApiKey = apiKeyInput.value.trim();
         localStorage.setItem('chatzenGeminiKey', geminiApiKey);
-        // Invalidate the cached model so it re-checks newly authorized models
-        localStorage.removeItem('chatzenGeminiModel');
-        cachedGeminiModel = null;
+        
+        const geminiModelSelect = document.getElementById('gemini-model-select');
+        if (geminiModelSelect) {
+            cachedGeminiModel = geminiModelSelect.value;
+            localStorage.setItem('chatzenGeminiModel', cachedGeminiModel);
+        } else {
+            // Invalidate if for some reason the dropdown is missing
+            localStorage.removeItem('chatzenGeminiModel');
+            cachedGeminiModel = null;
+        }
+        
         openAiApiKey = openAiKeyInput.value.trim();
         localStorage.setItem('chatzenOpenAIKey', openAiApiKey);
         const gnewsInput = document.getElementById('gnews-key-input');
@@ -636,7 +711,13 @@ document.addEventListener('DOMContentLoaded', () => {
             getOpenAIResponse(text, detectedCode).then(res => finalizeResponse(res, detectedCode));
         } else if (geminiApiKey) {
             getGeminiResponse(text, detectedCode).then(res => finalizeResponse(res, detectedCode));
+        } else if (!isHost && p2pConnections.length > 0) {
+            // PROXY MODE: Guest offloads AI processing to Host
+            typingIndicator.innerHTML = '<i class="fa-solid fa-cloud-bolt"></i> Asking Host AI...';
+            p2pConnections[0].send({ type: 'ai_request', text: text });
+            // We don't finalizeResponse yet, we wait for the Host to broadcast the chat_message back!
         } else {
+            // Last resort: Free Pollinations or Error
             getPollinationsResponse(text, detectedCode).then(res => finalizeResponse(res, detectedCode));
         }
     }
@@ -726,31 +807,10 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
     }
 
     async function getSupportedGeminiModel() {
+        const manualModel = localStorage.getItem('chatzenGeminiModel');
+        if (manualModel) return manualModel;
         if (cachedGeminiModel) return cachedGeminiModel;
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
-            const data = await res.json();
-            if (!data.models) return "gemini-1.5-flash-latest"; // Safe fallback
-            
-            // Prioritize the fastest/latest text generation models
-            const validModels = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent"));
-            const targetNames = ["gemini-1.5-flash", "gemini-flash-1.5", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
-            
-            for (let name of targetNames) {
-                const found = validModels.find(m => m.name === `models/${name}`);
-                if (found) {
-                    cachedGeminiModel = name;
-                    localStorage.setItem('chatzenGeminiModel', name);
-                    return name;
-                }
-            }
-            // Absolute final fallback to whatever generative model they have
-            const firstValid = validModels.find(m => m.name.includes("gemini"));
-            return firstValid ? firstValid.name.replace("models/", "") : "gemini-1.5-flash-latest";
-        } catch (e) {
-            console.error("Model discovery failed", e);
-            return "gemini-1.5-flash-latest";
-        }
+        return "gemini-1.5-flash-latest";
     }
 
     async function getGeminiResponse(userText, targetLang) {
