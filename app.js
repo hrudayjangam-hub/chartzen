@@ -809,8 +809,32 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
     async function getSupportedGeminiModel() {
         const manualModel = localStorage.getItem('chatzenGeminiModel');
         if (manualModel) return manualModel;
+        
         if (cachedGeminiModel) return cachedGeminiModel;
-        return "gemini-1.5-flash-latest";
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
+            const data = await res.json();
+            if (!data.models) return "gemini-1.5-flash"; // Safe fallback
+            
+            // Prioritize the fastest/latest text generation models
+            const validModels = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent"));
+            const targetNames = ["gemini-1.5-flash", "gemini-flash-1.5", "gemini-1.5-pro", "gemini-pro"];
+            
+            for (let name of targetNames) {
+                const found = validModels.find(m => m.name === `models/${name}`);
+                if (found) {
+                    cachedGeminiModel = name;
+                    localStorage.setItem('chatzenGeminiModel', name);
+                    return name;
+                }
+            }
+            // Absolute final fallback to whatever generative model they have
+            const firstValid = validModels.find(m => m.name.includes("gemini"));
+            return firstValid ? firstValid.name.replace("models/", "") : "gemini-1.5-flash";
+        } catch (e) {
+            console.error("Model discovery failed", e);
+            return "gemini-1.5-flash";
+        }
     }
 
     async function getGeminiResponse(userText, targetLang) {
