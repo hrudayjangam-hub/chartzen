@@ -716,24 +716,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (openAiApiKey) {
             getOpenAIResponse(text, detectedCode).then(res => finalizeResponse(res, detectedCode));
         } else if (geminiApiKey) {
-            console.log("ChatZen: Executing Gemini Relay...");
-            getGeminiResponse(text, detectedCode)
-                .then(res => {
-                    if (res.startsWith("API Error:")) {
-                         finalizeResponse(`🚨 THE GOOGLE GEMINI ENGINE RETURNED AN ERROR: ${res.replace("API Error:", "").trim()}`, detectedCode);
-                    } else {
-                         finalizeResponse(res, detectedCode);
-                    }
-                })
-                .catch(err => {
-                    console.error("Gemini Core Error:", err);
-                    finalizeResponse("🚨 NETWORK ERROR: The Gemini server could not be reached. Please check your internet connection.", detectedCode);
-                });
+            getSupportedGeminiModel().then(model => {
+                typingIndicator.innerHTML = `<i class="fa-solid fa-microchip"></i> AI: ${model.replace('gemini-', '').toUpperCase()} Active...`;
+                console.log(`ChatZen: Executing Gemini ${model} Relay...`);
+                getGeminiResponse(text, detectedCode)
+                    .then(res => {
+                        if (res.startsWith("API Error:")) {
+                             finalizeResponse(`🚨 GEMINI ENGINE ERROR: ${res.replace("API Error:", "").trim()}`, detectedCode);
+                        } else {
+                             finalizeResponse(res, detectedCode);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Gemini Core Error:", err);
+                        finalizeResponse("🚨 NETWORK ERROR: Unable to reach Google AI nodes. Please check your connection.", detectedCode);
+                    });
+            });
         } else if (!isHost && p2pConnections.length > 0) {
             // PROXY MODE: Guest offloads AI processing to Host
             typingIndicator.innerHTML = '<i class="fa-solid fa-cloud-bolt"></i> Asking Host AI...';
             p2pConnections[0].send({ type: 'ai_request', text: text });
-            // We don't finalizeResponse yet, we wait for the Host to broadcast the chat_message back!
         } else {
             // Last resort: Free Pollinations or Error
             getPollinationsResponse(text, detectedCode).then(res => finalizeResponse(res, detectedCode));
@@ -836,7 +838,7 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
             
             // Prioritize the fastest/latest text generation models
             const validModels = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent"));
-            const targetNames = ["gemini-1.5-flash", "gemini-flash-1.5", "gemini-1.5-pro", "gemini-pro"];
+            const targetNames = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-flash-1.5", "gemini-1.5-pro", "gemini-pro"];
             
             for (let name of targetNames) {
                 const found = validModels.find(m => m.name === `models/${name}`);
@@ -848,7 +850,7 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
             }
             // Absolute final fallback to whatever generative model they have
             const firstValid = validModels.find(m => m.name.includes("gemini"));
-            return firstValid ? firstValid.name.replace("models/", "") : "gemini-1.5-flash";
+            return firstValid ? firstValid.name.replace("models/", "") : "gemini-2.0-flash";
         } catch (e) {
             console.error("Model discovery failed", e);
             return "gemini-1.5-flash";
