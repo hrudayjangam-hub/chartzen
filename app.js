@@ -563,8 +563,19 @@ document.addEventListener('DOMContentLoaded', () => {
             saveSessions();
         }
 
-        if (!aiAssistToggle || aiAssistToggle.checked) {
-            triggerAIResponse(text);
+        // Context-Aware Group Routing (Rate Limit Fix)
+        let shouldTriggerAI = true;
+        
+        // If there is more than 1 human (Local masks or WebRTC peers), don't trigger AI unless explicitly asked!
+        if (s.members.length > 1 || p2pConnections.length > 0) {
+            const lowerText = text.toLowerCase();
+            const isMentioned = lowerText.includes('chatzen') || lowerText.includes('@chatzen') || lowerText.includes('@ai');
+            if (!isMentioned) shouldTriggerAI = false;
+        }
+
+        if ((!aiAssistToggle || aiAssistToggle.checked) && shouldTriggerAI) {
+            // Slight delay feeling more natural
+            setTimeout(() => triggerAIResponse(text), 600);
         }
     }
 
