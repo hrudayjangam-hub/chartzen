@@ -361,12 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // QR Code Generator Logic
     if (qrBtn) {
         qrBtn.addEventListener('click', () => {
-            if (!currentSessionId) return alert("Please create or select a chat session first.");
-            const roomUrl = window.location.origin + window.location.pathname + '?room=' + currentSessionId;
-            const encodedUrl = encodeURIComponent(roomUrl);
+            if (!currentSessionId) { alert("Please create or select a chat session first."); return; }
+        
+        // Ensure cache-bursting version strings (e.g., ?v=2026) are passed down to the mobile device!
+        const params = new URLSearchParams(window.location.search);
+        params.set('room', currentSessionId);
+        const roomUrl = window.location.origin + window.location.pathname + '?' + params.toString();
+        
+        const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(roomUrl)}&color=ffffff&bgcolor=1e1e2d`;
             const qrContainer = document.getElementById('qr-code-container');
             if (qrContainer) {
-                qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodedUrl}&color=ffffff&bgcolor=1e1e2d" style="border: 4px solid var(--glass-border); border-radius: 12px; width: 250px; height: 250px;" alt="QR Code">`;
+                qrContainer.innerHTML = `<img src="${qrImgUrl}" style="border: 4px solid var(--glass-border); border-radius: 12px; width: 250px; height: 250px;" alt="QR Code">`;
             }
             const qrLinkText = document.getElementById('qr-link-text');
             if (qrLinkText) qrLinkText.innerText = roomUrl;
@@ -550,7 +555,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sendBtn.classList.add('disabled');
         
         const s = sessions.find(s => s.id === currentSessionId);
-        const fallbackName = s ? (s.members.find(m => m.id === s.activeMemberId)?.name || s.members[0]?.name) : 'Guest';
+        const membersList = (s && s.members) ? s.members : [];
+        const fallbackName = membersList.length > 0 ? (membersList.find(m => m.id === (s?.activeMemberId))?.name || membersList[0]?.name) : 'Guest';
         const senderName = isHost ? fallbackName : (p2pUsername || fallbackName);
         
         addMessage(text, 'user', true, null, senderName);
@@ -567,7 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let shouldTriggerAI = true;
         
         // If there is more than 1 human (Local masks or WebRTC peers), don't trigger AI unless explicitly asked!
-        if (s.members.length > 1 || p2pConnections.length > 0) {
+        const memberCount = (s && s.members) ? s.members.length : 1;
+        if (memberCount > 1 || p2pConnections.length > 0) {
             const lowerText = text.toLowerCase();
             const isMentioned = lowerText.includes('chatzen') || lowerText.includes('@chatzen') || lowerText.includes('@ai');
             if (!isMentioned) shouldTriggerAI = false;
@@ -822,7 +829,8 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         
         let alignmentClass = '';
         if (sender === 'user') {
-            const fallbackName = s ? (s.members.find(m => m.id === s.activeMemberId)?.name || s.members[0]?.name) : 'You';
+            const membersList = (s && s.members) ? s.members : [];
+            const fallbackName = membersList.length > 0 ? (membersList.find(m => m.id === (s?.activeMemberId))?.name || membersList[0]?.name) : 'You';
             const myRecognizedName = isHost ? fallbackName : (p2pUsername || fallbackName);
             
             const realMemberName = memberName || myRecognizedName;
