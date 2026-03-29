@@ -667,6 +667,12 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         
         try {
             const res = await fetch(url);
+            
+            // Fallback for when Pollinations is dead (e.g. 500 ENOSPC)
+            if (!res.ok) {
+                return "The Free AI server is currently offline or overloaded. Please set a custom Gemini API Key in Settings to restore ChatZen functionality!";
+            }
+            
             let aiText = await res.text();
             
             // Background change mock hack since it's fun
