@@ -764,8 +764,11 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
         const payload = { systemInstruction: { parts: [{ text: systemPrompt }] }, contents: [] };
         
         const s = sessions.find(s => s.id === currentSessionId);
-        if (s) {
-            s.messages.slice(-10).forEach(msg => {
+        if (s && s.messages) {
+            // Strictly filter out any objects without physical text strings to prevent Google API crashing
+            const validMsgs = s.messages.filter(msg => msg && typeof msg.text === 'string' && msg.text.trim().length > 0);
+            
+            validMsgs.slice(-10).forEach(msg => {
                 const mappedRole = msg.sender === 'user' ? 'user' : 'model';
                 const lastContent = payload.contents[payload.contents.length - 1];
                 if (lastContent && lastContent.role === mappedRole) {
@@ -774,6 +777,21 @@ You can also format code nicely in markdown code blocks. But mostly - just be re
                     payload.contents.push({ role: mappedRole, parts: [{ text: msg.text }] });
                 }
             });
+        }
+        
+        // Safety Fallback: If P2P array synced incorrectly, force the user text payload!
+        if (payload.contents.length === 0) {
+            if (userText && userText.trim() !== '') {
+                payload.contents.push({ role: 'user', parts: [{ text: userText }] });
+            } else {
+                payload.contents.push({ role: 'user', parts: [{ text: "Hello" }] }); // Absolute absolute fallback
+            }
+        }
+        
+        // Google Legacy API Fallback (Models older than 1.5 do NOT support systemInstructions)
+        if (!activeModel.includes('1.5') && !activeModel.includes('2.0') && !activeModel.includes('2.5')) {
+            delete payload.systemInstruction;
+            payload.contents[0].parts[0].text = systemPrompt + "\n\n" + payload.contents[0].parts[0].text;
         }
 
         try {
