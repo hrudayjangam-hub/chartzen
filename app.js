@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeQr = document.getElementById('close-qr');
     
     const saveKeyBtn = document.getElementById('save-key-btn');
+    const claudeKeyInput = document.getElementById('claude-key-input');
+    const claudeModelSelect = document.getElementById('claude-model-select');
     const apiKeyInput = document.getElementById('api-key-input');
     const openAiKeyInput = document.getElementById('openai-key-input');
     const supabaseUrlInput = document.getElementById('supabase-url-input');
@@ -69,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
         geminiApiKey = DEFAULT_GEMINI_KEY;
         localStorage.setItem('chatzenGeminiKey', DEFAULT_GEMINI_KEY);
     }
+    let claudeApiKey = localStorage.getItem('chatzenClaudeKey') || '';
+    let cachedClaudeModel = localStorage.getItem('chatzenClaudeModel') || 'claude-3-5-sonnet-20240620';
     let openAiApiKey = localStorage.getItem('chatzenOpenAIKey') || '';
     let gnewsKey = localStorage.getItem('chatzenGnewsKey') || '';
     let p2pUsername = localStorage.getItem('chatzenP2PUsername') || null;
@@ -450,6 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     settingsBtn.addEventListener('click', () => {
+        if (claudeKeyInput) claudeKeyInput.value = claudeApiKey;
+        if (claudeModelSelect) claudeModelSelect.value = cachedClaudeModel;
+        
         apiKeyInput.value = geminiApiKey || DEFAULT_GEMINI_KEY;
         if (openAiKeyInput) openAiKeyInput.value = openAiApiKey;
         const gnewsInput = document.getElementById('gnews-key-input');
@@ -467,6 +474,15 @@ document.addEventListener('DOMContentLoaded', () => {
     closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
 
     saveKeyBtn.addEventListener('click', () => {
+        if (claudeKeyInput) {
+            claudeApiKey = claudeKeyInput.value.trim();
+            localStorage.setItem('chatzenClaudeKey', claudeApiKey);
+        }
+        if (claudeModelSelect) {
+            cachedClaudeModel = claudeModelSelect.value;
+            localStorage.setItem('chatzenClaudeModel', cachedClaudeModel);
+        }
+
         geminiApiKey = apiKeyInput.value.trim();
         localStorage.setItem('chatzenGeminiKey', geminiApiKey);
         
@@ -713,7 +729,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 2) Fallback to LLM (Tiered System)
-        if (openAiApiKey) {
+        if (claudeApiKey) {
+            typingIndicator.innerHTML = `<i class="fa-solid fa-brain"></i> Claude Active...`;
+            getClaudeResponse(text, detectedCode)
+                .then(res => finalizeResponse(res, detectedCode))
+                .catch(err => {
+                    console.error("Claude Error:", err);
+                    finalizeResponse("🚨 CLAUDE ENGINE ERROR: Check your API key or CORS proxy status.", detectedCode);
+                });
+        } else if (openAiApiKey) {
             getOpenAIResponse(text, detectedCode).then(res => finalizeResponse(res, detectedCode));
         } else if (geminiApiKey) {
             getSupportedGeminiModel().then(model => {
@@ -823,6 +847,48 @@ Response rules: Format with MD, use emojis naturally, be genuinely enthusiastic!
         } catch (e) {
             console.error("OpenAI Error:", e);
             return "OpenAI Error. Checked your key? I'll fallback to other engines if needed.";
+        }
+    }
+
+    async function getClaudeResponse(userText, targetLang) {
+        let messages = [];
+        const s = sessions.find(s => s.id === currentSessionId);
+        if (s) {
+            s.messages.slice(-10).forEach(msg => {
+                messages.push({ role: msg.sender === 'ai' ? 'assistant' : 'user', content: msg.text });
+            });
+        }
+        
+        const systemPrompt = `You are LAY, a super friendly, warm, and chill AI buddy. You talk exactly like a close human friend having a real conversation - casual, cheerful, caring, and expressive. Use emojis naturally when it feels right. Be genuinely enthusiastic and fun! 
+IMPORTANT: ALWAYS reply in the EXACT SAME LANGUAGE the user types in. If they use Hindi, reply in Hindi. Telugu means Telugu. Spanish means Spanish. NEVER switch to English unless they wrote in English.
+Image generation: If the user wants to see a picture of something, embed it like: ![description](https://image.pollinations.ai/prompt/URL_ENCODED_DESCRIPTION)
+If the user asks you to change the background or wallpaper, output exactly: <EXECUTE_CMD>CHANGE_BG:image_url</EXECUTE_CMD>
+You can also format code nicely in markdown code blocks. But mostly - just be real, warm, and totally human!`;
+
+        if (!messages.find(m => m.content === userText)) messages.push({ role: "user", content: userText });
+
+        try {
+            const res = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": claudeApiKey,
+                    "anthropic-version": "2023-06-01",
+                    "dangerouslyAllowBrowser": "true" // Note: This is a hack for some proxies/shims
+                },
+                body: JSON.stringify({
+                    model: cachedClaudeModel || "claude-3-5-sonnet-20240620",
+                    max_tokens: 2048,
+                    system: systemPrompt,
+                    messages: messages
+                })
+            });
+            const data = await res.json();
+            if (data.error) return "Claude API Error: " + data.error.message;
+            return data.content[0].text;
+        } catch (e) {
+            console.error("Claude Error:", e);
+            return "Claude Node Unreachable. This is likely a CORS block. Please use a CORS proxy or check your network.";
         }
     }
 
