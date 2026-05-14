@@ -102,7 +102,7 @@ app.post('/api/ai/chat', authenticate, async (req, res) => {
       body: JSON.stringify({
         model: model || 'openai/gpt-4o',
         messages,
-        max_tokens: 8192,
+        max_tokens: 2048,
         temperature: 0.8
       })
     });
