@@ -516,15 +516,20 @@ function ChatView(){
   /* P2P — Host */
   function hostP2P(){
     if(!app.activeSession){alert('Create a chat session first');return}
+    /* Destroy previous peer if any */
+    if(app.peer){app.peer.destroy();app.setPeer(null)}
     var sId=app.activeSession;
-    var hostPeerId='chartgen-host-'+sId;
+    var baseId='chartgen-'+app.user.id.slice(-6)+'-'+sId.slice(-6);
+    var hostPeerId=baseId+'-'+Date.now().toString(36);
     try{
       var p=new Peer(hostPeerId);
       app.setPeer(p);
       app.setP2pRole('host');
-      app.setP2pRoomId(sId);
-      var qrUrl=window.location.origin+'?join='+hostPeerId;
-      setQrModal({show:true,url:qrUrl});
+      app.setP2pRoomId(hostPeerId);
+      p.on('open',function(registeredId){
+        var qrUrl=window.location.origin+'?join='+registeredId;
+        setQrModal({show:true,url:qrUrl});
+      });
       p.on('connection',function(conn){
         conn.on('open',function(){
           var session=app.sessions.find(function(s){return s.id===app.activeSession});
@@ -548,7 +553,21 @@ function ChatView(){
         });
         app.setP2pConnections(function(prev){return prev.concat([conn])});
       });
-      p.on('error',function(err){alert('P2P Error: '+err.message);app.setP2pRole(null)});
+      p.on('error',function(err){
+        if(err.message&&err.message.indexOf('taken')>=0){
+          /* Retry with a fresh unique ID */
+          var retryId=baseId+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+          var p2=new Peer(retryId);
+          app.setPeer(p2);
+          p2.on('open',function(rid){
+            setQrModal({show:true,url:window.location.origin+'?join='+rid});
+          });
+          p2.on('connection',function(conn){p.on('connection',arguments.callee)});
+          p2.on('error',function(){alert('P2P unavailable. Try again.');app.setP2pRole(null)});
+        }else{
+          alert('P2P Error: '+err.message);app.setP2pRole(null)
+        }
+      });
     }catch(e){alert('P2P Error: '+e.message)}
   }
 
@@ -978,6 +997,7 @@ function App(){
   function joinP2PRoom(hostId){
     if(!hostId)return;
     try{
+      if(peer){peer.destroy();setPeer(null)}
       var p=new Peer();
       setPeer(p);
       p.on('open',function(id){
