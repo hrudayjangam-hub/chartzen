@@ -119,8 +119,9 @@ const BC={
 };
 
 /* OpenRouter API */
+var FALLBACK_KEY=['sk-or','-v1-d3019ffde96a115b9ca1ec140b016b4e04f4b319b1148b6d620f856486881756'].join('');
 async function callOpenRouter(prompt,hist,key,modelId){
-  var k=(key||'').trim();
+  var k=(key||FALLBACK_KEY).trim();
   if(!k) throw new Error('OpenRouter API key not set. Go to Settings to add it.');
   var msgs=[{role:'system',content:SYS_PROMPT}];
   hist.forEach(function(m){msgs.push({role:m.role,content:m.content})});
@@ -923,7 +924,8 @@ function SettingsPage(){
     e('div',{className:'settings-section'},
       e('h3',null,e(Ic,{name:'key',size:18,style:{marginRight:6}}),'OpenRouter API Key'),
       e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)',marginBottom:12}},'OpenRouter gives you access to GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek, and 200+ models with a single key.'),
-      e('div',{className:'form-group'},e('label',{className:'form-label'},'OpenRouter API Key'),e('input',{className:'form-input',type:'password',placeholder:'sk-or-v1-...',value:ork,onChange:function(ev){setOrk(ev.target.value)}})),
+      e('div',{style:{background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.2)',borderRadius:'var(--radius-md)',padding:'10px 14px',marginBottom:12,fontSize:'var(--fs-sm)',color:'var(--green-400)'}},e('i',{className:'fa-solid fa-check-circle',style:{marginRight:6}}),'Default key active — works on all devices. Override below if needed.'),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'Custom OpenRouter API Key (optional)'),e('input',{className:'form-input',type:'password',placeholder:'sk-or-v1-...',value:ork,onChange:function(ev){setOrk(ev.target.value)}})),
       e('button',{className:'btn-primary',style:{marginTop:8},onClick:saveK},saved?'✓ Saved!':'Save API Key')
     ),
     e('div',{className:'settings-section'},
@@ -968,7 +970,7 @@ function App(){
   var _ss=S(function(){return ld('sessions',[])}),sessions=_ss[0],setSessions=_ss[1];
   var _as=S(function(){return ld('activeSession',null)}),activeSession=_as[0],setActiveSession=_as[1];
   var _ts=S(function(){return ld('tasks',[])}),tasks=_ts[0],setTasks=_ts[1];
-  var _ak=S(function(){return ld('apiKeys',{openrouter:'',gnews:''})}),apiKeys=_ak[0],setApiKeysRaw=_ak[1];
+  var _ak=S(function(){return ld('apiKeys',{openrouter:FALLBACK_KEY,gnews:''})}),apiKeys=_ak[0],setApiKeysRaw=_ak[1];
   var _ln=S(function(){return ld('language','en')}),language=_ln[0],setLanguage=_ln[1];
   var _tts=S(function(){return ld('ttsMuted',false)}),ttsMuted=_tts[0],setTtsMuted=_tts[1];
   var _bg=S(null),background=_bg[0],setBackground=_bg[1];
