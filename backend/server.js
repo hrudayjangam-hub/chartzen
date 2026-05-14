@@ -14,7 +14,17 @@ const SECRET = process.env.JWT_SECRET || 'chartgen_secret_key_2026';
 
 app.use(express.json());
 app.use(cors());
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '..')));
+
+// ─── Config endpoint (provides API key to frontend) ───
+app.get('/api/config', (req, res) => {
+  res.json({
+    openrouterKey: process.env.OPENROUTER_API_KEY || ''
+  });
+});
 
 // --- Authentication Middleware ---
 const authenticate = (req, res, next) => {
@@ -143,6 +153,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('🔥 User disconnected:', socket.id);
   });
+});
+
+// ─── SPA fallback: serve index.html for unknown routes ───
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 server.listen(PORT, () => console.log(`🚀 ChartGen Backend + Realtime running on port ${PORT}`));
