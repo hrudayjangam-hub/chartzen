@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>C</text></svg>">
 <link rel="stylesheet" href="styles.css?v=2">
 </head>
@@ -20,39 +20,60 @@
 <div id="root"></div>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="api.js?v=2"></script>
+<script src="languages.js?v=2"></script>
 <script>
-/* ChartGen Smart AI Assistant v2.0 — OpenRouter */
-const e=React.createElement,{useState:S,useEffect:E,useRef:R,useCallback:CB,createContext:CC,useContext:UC}=React;
-const AppCtx=CC();function useApp(){return UC(AppCtx)}
+/* ChartGen Smart AI Assistant v3.0 — Merged with ChatZen Features */
+var e=React.createElement,{useState:S,useEffect:E,useRef:R,useCallback:CB,createContext:CC,useContext:UC}=React;
+var AppCtx=CC();function useApp(){return UC(AppCtx)}
 
-/* SVG Icon Component */
-const ICONS={
-'layout-dashboard':'<path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/>',
-'message-square':'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-'check-square':'<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
-'book-open':'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
-'settings':'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-'plus':'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-'send':'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
-'sparkles':'<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
-'bell':'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
-'user':'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-'message-circle':'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>',
-'x':'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-'chevron-left':'<polyline points="15 18 9 12 15 6"/>',
-'chevron-right':'<polyline points="9 18 15 12 9 6"/>',
-'circle':'<circle cx="12" cy="12" r="10"/>',
-'clock':'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-'check-circle':'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
-'trash-2':'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
-'log-out':'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+/* Font Awesome Icon Component */
+var FA_MAP={
+  'layout-dashboard':'chart-simple','message-square':'message','users':'users',
+  'check-square':'square-check','book-open':'book-open','settings':'gear','plus':'plus',
+  'send':'paper-plane','sparkles':'wand-magic-sparkles','bell':'bell','user':'user',
+  'message-circle':'comment','x':'xmark','chevron-left':'chevron-left','chevron-right':'chevron-right',
+  'circle':'circle','clock':'clock','check-circle':'circle-check','trash-2':'trash-can',
+  'log-out':'right-from-bracket','map':'map-location-dot','camera':'camera','video':'video',
+  'microphone':'microphone','paperclip':'paperclip','location-dot':'location-dot','language':'language',
+  'globe':'globe','volume-high':'volume-high','volume-xmark':'volume-xmark',
+  'qrcode':'qrcode','people-group':'users-gear','link':'link','copy':'copy',
+  'search':'search','play':'play','pause':'pause','stop':'stop','scissors':'scissors',
+  'download':'download','upload':'upload','image':'image','filter':'filter','sliders':'sliders',
+  'eye':'eye','eye-slash':'eye-slash','tag':'tag','code':'code','terminal':'terminal',
+  'chart-line':'chart-line','chart-bar':'chart-bar','chart-pie':'chart-pie',
+  'house':'house','info':'info','circle-info':'circle-info','circle-question':'circle-question',
+  'circle-exclamation':'circle-exclamation','arrow-right':'arrow-right','arrow-left':'arrow-left',
+  'bars':'bars','grip':'grip','grip-lines':'grip-lines','ellipsis':'ellipsis',
+  'ellipsis-vertical':'ellipsis-vertical','pen':'pen','pen-to-square':'pen-to-square',
+  'floppy-disk':'floppy-disk','share':'share-nodes','share-from-square':'share-from-square',
+  'square-plus':'square-plus','circle-plus':'circle-plus','check':'check',
+  'wand-magic':'wand-magic','wifi':'wifi','cloud':'cloud','server':'server',
+  'database':'database','file-lines':'file-lines','folder':'folder','folder-open':'folder-open',
+  'thumbs-up':'thumbs-up','star':'star','heart':'heart','flag':'flag','ban':'ban',
+  'bullhorn':'bullhorn','envelope':'envelope','comment':'comment','comments':'comments',
+  'newspaper':'newspaper','book':'book','graduation-cap':'graduation-cap',
+  'chalkboard-user':'chalkboard-user','clipboard':'clipboard','list-check':'list-check',
+  'clock-rotate-left':'clock-rotate-left','history':'history','language':'language',
+  'palette':'palette','hashtag':'hashtag','gear':'gear','magnifying-glass':'magnifying-glass',
+  'toggle-on':'toggle-on','toggle-off':'toggle-off','toggle':'toggle',
+  'moon':'moon','sun':'sun','music':'music','robot':'robot','brain':'brain',
+  'right-to-bracket':'right-to-bracket','right-from-bracket':'right-from-bracket',
+  'arrows-rotate':'arrows-rotate','maximize':'maximize','minimize':'minimize',
+  'up-right-and-down-left-from-center':'up-right-and-down-left-from-center',
+  'gauge-high':'gauge-high','triangle-exclamation':'triangle-exclamation',
+  'comment-dots':'comment-dots','face-smile':'face-smile','face-frown':'face-frown',
+  'exclamation':'exclamation','question':'question','eraser':'eraser'
 };
 
 function Ic(p){
-var n=p.name,s=p.size||20;
-var d=ICONS[n]||ICONS['circle'];
-return e('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round',dangerouslySetInnerHTML:{__html:d}});
+  var n=p.name,s=p.size||20;
+  var fa=FA_MAP[n]||'circle';
+  return e('i',{className:'fa-solid fa-'+fa,style:{fontSize:s+'px',width:s+'px',height:s+'px',display:'inline-flex',alignItems:'center',justifyContent:'center',lineHeight:1}});
 }
 
 /* Config */
@@ -69,110 +90,116 @@ function sv(k,v){try{localStorage.setItem('cg_'+k,JSON.stringify(v))}catch(e){}}
 function fmtTime(t){return new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function detectEmo(t){var l=t.toLowerCase();if(/happy|great|awesome|love|amazing|wonderful|fantastic|yay/.test(l))return'happy';if(/stress|anxious|worried|overwhelm|deadline|urgent/.test(l))return'stressed';if(/confus|don't understand|what does|how does|unclear/.test(l))return'curious';if(/angry|frustrat|annoyed|hate|terrible/.test(l))return'frustrated';return'neutral'}
 function emoEmoji(em){return{happy:'😊',stressed:'😰',curious:'🤔',frustrated:'😤',neutral:'💭'}[em]||'💭'}
+function detectSessionTag(t){
+  var l=t.toLowerCase();
+  if(/code|function|class|bug|debug|api|endpoint|variable|component|react|node/.test(l))return'Code';
+  if(/write|story|poem|essay|creative|song|script|design|draw|art/.test(l))return'Creative';
+  if(/research|analyze|study|paper|thesis|source|citation|reference/.test(l))return'Research';
+  if(/math|physics|chemistry|biology|science|equation|formula/.test(l))return'Research';
+  return'General';
+}
 
-/* === Phase 4: Backend Client === */
-const API_URL = 'http://localhost:5000/api';
-const BC = {
-  tok: () => ld('token', null),
-  h: () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${BC.tok()}` }),
-  req: async (url, m = 'GET', b = null) => {
-    try {
-      const res = await fetch(`${API_URL}${url}`, { method: m, headers: BC.h(), body: b ? JSON.stringify(b) : null });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Server Error'); }
+/* Backend Client */
+const API_URL='http://localhost:5000/api';
+const BC={
+  tok:function(){return ld('token',null)},
+  h:function(){return{'Content-Type':'application/json','Authorization':'Bearer '+BC.tok()}},
+  req:async function(url,m,b){
+    try{
+      var res=await fetch(API_URL+url,{method:m,headers:BC.h(),body:b?JSON.stringify(b):null});
+      if(!res.ok){var err=await res.json();throw new Error(err.error||'Server Error')}
       return await res.json();
-    } catch (e) { throw e; }
+    }catch(e){throw e}
   },
-  auth: {
-    login: (em, pw) => BC.req('/auth/login', 'POST', { email: em, password: pw }),
-    reg: (nm, em, pw) => BC.req('/auth/register', 'POST', { name: nm, email: em, password: pw })
-  },
-  get: (res) => BC.req(`/${res}`),
-  post: (res, d) => BC.req(`/${res}`, 'POST', d),
-  patch: (res, id, d) => BC.req(`/${res}/${id}`, 'PATCH', d),
-  del: (res, id) => BC.req(`/${res}/${id}`, 'DELETE')
+  auth:{login:function(em,pw){return BC.req('/auth/login','POST',{email:em,password:pw})},reg:function(nm,em,pw){return BC.req('/auth/register','POST',{name:nm,email:em,password:pw})}},
+  get:function(res){return BC.req('/'+res)},
+  post:function(res,d){return BC.req('/'+res,'POST',d)},
+  patch:function(res,id,d){return BC.req('/'+res+'/'+id,'PATCH',d)},
+  del:function(res,id){return BC.req('/'+res+'/'+id,'DELETE')}
 };
 
-/* OpenRouter API (unified — works with any model) */
+/* OpenRouter API */
 async function callOpenRouter(prompt,hist,key,modelId){
-var k=(key||'').trim();
-if(!k) throw new Error('OpenRouter API key not set. Go to Settings to add it.');
-var msgs=[{role:'system',content:SYS_PROMPT}];
-hist.forEach(function(m){msgs.push({role:m.role,content:m.content})});
-var r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-method:'POST',
-headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
-body:JSON.stringify({model:modelId||'openai/gpt-4o',messages:msgs,max_tokens:2048,temperature:0.8})
-});
-if(!r.ok){var err=await r.json().catch(function(){return{}});throw new Error((err.error&&err.error.message)||'OpenRouter error ('+r.status+')');}
-var data=await r.json();
-return data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||'No response.'
+  var k=(key||'').trim();
+  if(!k) throw new Error('OpenRouter API key not set. Go to Settings to add it.');
+  var msgs=[{role:'system',content:SYS_PROMPT}];
+  hist.forEach(function(m){msgs.push({role:m.role,content:m.content})});
+  var r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
+    body:JSON.stringify({model:modelId||'openai/gpt-4o',messages:msgs,max_tokens:2048,temperature:0.8})
+  });
+  if(!r.ok){var err=await r.json().catch(function(){return{}});throw new Error((err.error&&err.error.message)||'OpenRouter error ('+r.status+')')}
+  var data=await r.json();
+  return data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||'No response.';
 }
 
 /* LANDING PAGE */
 function LandingPage(p){
-return e('div',{className:'landing-page'},
-e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
-e('header',{className:'landing-hero'},
-e('h2',null,'Think together, ',e('br'),'build ',e('span',{className:'hero-reveal'},'smarter')),
-e('p',{style:{fontSize:'var(--fs-lg)',opacity:0.8,maxWidth:700,margin:'0 auto 40px'}},'ChartGen is the ultimate AI-powered workspace where intelligence meets collaboration. Break down complex goals, generate study plans, and build faster than ever before.'),
-e('div',{className:'landing-actions'},
-e('button',{className:'btn-primary',style:{width:'auto',padding:'18px 48px',fontSize:'var(--fs-base)'},onClick:p.onGetStarted},'Get Started — Free For Students'),
-e('button',{className:'btn-glass',style:{padding:'18px 32px'},onClick:function(){window.open('https://github.com','_blank')}},e(Ic,{name:'github',size:20}),'View Architecture')
-)
-),
-e('div',{className:'landing-features'},
-[
-{icon:'✨',title:'AI Task Breakdown',desc:'Turn any project goal into actionable steps with one click.'},
-{icon:'🧠',title:'Study Hub',desc:'Generate comprehensive notes, quizzes, and study plans for any subject instantly.'},
-{icon:'🤝',title:'Collaborative Edge',desc:'Real-time workspaces designed for teams, researchers, and high-performance study groups.'}
-].map(function(f,i){return e('div',{key:i,className:'landing-card'},e('span',{className:'feature-preview-icon'},f.icon),e('h3',null,f.title),e('p',{style:{marginTop:12,color:'var(--text-secondary)'}},f.desc))})
-)
-)
+  return e('div',{className:'landing-page'},
+    e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
+    e('header',{className:'landing-hero'},
+      e('h2',null,'Think together, ',e('br'),'build ',e('span',{className:'hero-reveal'},'smarter')),
+      e('p',{style:{fontSize:'var(--fs-lg)',opacity:0.8,maxWidth:700,margin:'0 auto 40px'}},'ChartGen is the ultimate AI-powered workspace where intelligence meets collaboration. Break down complex goals, generate study plans, and build faster than ever before. Powered by OpenRouter (GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek).'),
+      e('div',{className:'landing-actions'},
+        e('button',{className:'btn-primary',style:{width:'auto',padding:'18px 48px',fontSize:'var(--fs-base)'},onClick:p.onGetStarted},'Get Started — Free For Students'),
+        e('button',{className:'btn-glass',style:{padding:'18px 32px'},onClick:function(){window.open('#','_blank')}},e(Ic,{name:'github',size:20}),'View Architecture')
+      )
+    ),
+    e('div',{className:'landing-features'},[
+      {icon:'✨',title:'AI Task Breakdown',desc:'Turn any project goal into actionable steps with one click.'},
+      {icon:'🧠',title:'Study Hub',desc:'Generate comprehensive notes, quizzes, and study plans for any subject instantly.'},
+      {icon:'🤝',title:'Collaborative Edge',desc:'Real-time workspaces designed for teams, researchers, and high-performance study groups.'}
+    ].map(function(f,i){return e('div',{key:i,className:'landing-card'},e('span',{className:'feature-preview-icon'},f.icon),e('h3',null,f.title),e('p',{style:{marginTop:12,color:'var(--text-secondary)'}},f.desc))}))
+  )
 }
 
 /* LOGIN PAGE */
 function LoginPage(p){
-var _s1=S(''),email=_s1[0],setEmail=_s1[1];
-var _s2=S(''),pw=_s2[0],setPw=_s2[1];
-var _s3=S(''),err=_s3[0],setErr=_s3[1];
-var app=useApp();
-function sub(ev){ev.preventDefault();if(!email||!pw)return setErr('Please fill in all fields');var users=ld('users',[]);var u=users.find(function(u){return u.email===email&&u.password===pw});if(!u)return setErr('Invalid credentials. Please sign up first!');app.login(u)}
-
-return e('div',{className:'auth-page'},
-e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
-e('div',{className:'auth-bg'}),
-e('form',{className:'auth-card',onSubmit:sub},
-e('div',{className:'auth-logo'},e('div',{className:'auth-logo-icon'},'C'),e('h2',null,'ChartGen'),e('p',null,'Think together, build smarter')),
-err&&e('div',{className:'auth-error'},err),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'Email'),e('input',{className:'form-input',type:'email',placeholder:'you@example.com',value:email,onChange:function(ev){setEmail(ev.target.value)}})),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'Password'),e('input',{className:'form-input',type:'password',placeholder:'••••••••',value:pw,onChange:function(ev){setPw(ev.target.value)}})),
-e('button',{className:'btn-primary',type:'submit'},'Sign In'),
-e('p',{className:'auth-switch'},"Don't have an account? ",e('a',{onClick:p.onSwitch},'Sign Up'))
-))
+  var _s1=S(''),email=_s1[0],setEmail=_s1[1];
+  var _s2=S(''),pw=_s2[0],setPw=_s2[1];
+  var _s3=S(''),err=_s3[0],setErr=_s3[1];
+  var app=useApp();
+  function sub(ev){ev.preventDefault();if(!email||!pw)return setErr('Please fill in all fields');var users=ld('users',[]);var u=users.find(function(u){return u.email===email&&u.password===pw});if(!u)return setErr('Invalid credentials. Please sign up first!');app.login(u)}
+  return e('div',{className:'auth-page'},
+    e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
+    e('div',{className:'auth-bg'}),
+    e('form',{className:'auth-card',onSubmit:sub},
+      e('div',{className:'auth-logo'},e('div',{className:'auth-logo-icon'},'C'),e('h2',null,'ChartGen'),e('p',null,'Think together, build smarter')),
+      err&&e('div',{className:'auth-error'},err),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'Email'),e('input',{className:'form-input',type:'email',placeholder:'you@example.com',value:email,onChange:function(ev){setEmail(ev.target.value)}})),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'Password'),e('input',{className:'form-input',type:'password',placeholder:'••••••••',value:pw,onChange:function(ev){setPw(ev.target.value)}})),
+      e('button',{className:'btn-primary',type:'submit'},'Sign In'),
+      e('p',{className:'auth-switch'},"Don't have an account? ",e('a',{onClick:p.onSwitch},'Sign Up'))
+    )
+  )
 }
 
 /* REGISTER PAGE */
 function RegisterPage(p){
-var _1=S(''),nm=_1[0],setNm=_1[1];
-var _2=S(''),em=_2[0],setEm=_2[1];
-var _3=S(''),pw=_3[0],setPw=_3[1];
-var _4=S(''),err=_4[0],setErr=_4[1];
-var app=useApp();
-function sub(ev){ev.preventDefault();if(!nm||!em||!pw)return setErr('Please fill in all fields');if(pw.length<6)return setErr('Password must be at least 6 characters');var users=ld('users',[]);if(users.find(function(u){return u.email===em}))return setErr('Email already registered');var u={id:uid(),name:nm,email:em,password:pw,avatar:nm[0].toUpperCase(),createdAt:Date.now()};users.push(u);sv('users',users);app.login(u)}
-
-return e('div',{className:'auth-page'},
-e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
-e('div',{className:'auth-bg'}),
-e('form',{className:'auth-card',onSubmit:sub},
-e('div',{className:'auth-logo'},e('div',{className:'auth-logo-icon'},'C'),e('h2',null,'ChartGen'),e('p',null,'Create your account')),
-err&&e('div',{className:'auth-error'},err),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'Full Name'),e('input',{className:'form-input',type:'text',placeholder:'John Doe',value:nm,onChange:function(ev){setNm(ev.target.value)}})),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'Email'),e('input',{className:'form-input',type:'email',placeholder:'you@example.com',value:em,onChange:function(ev){setEm(ev.target.value)}})),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'Password'),e('input',{className:'form-input',type:'password',placeholder:'••••••••',value:pw,onChange:function(ev){setPw(ev.target.value)}})),
-e('button',{className:'btn-primary',type:'submit'},'Create Account'),
-e('p',{className:'auth-switch'},'Already have an account? ',e('a',{onClick:p.onSwitch},'Sign In'))
-))
+  var _1=S(''),nm=_1[0],setNm=_1[1];
+  var _2=S(''),em=_2[0],setEm=_2[1];
+  var _3=S(''),pw=_3[0],setPw=_3[1];
+  var _4=S(''),err=_4[0],setErr=_4[1];
+  var app=useApp();
+  function sub(ev){ev.preventDefault();if(!nm||!em||!pw)return setErr('Please fill in all fields');if(pw.length<6)return setErr('Password must be at least 6 characters');var users=ld('users',[]);if(users.find(function(u){return u.email===em}))return setErr('Email already registered');var u={id:uid(),name:nm,email:em,password:pw,avatar:nm[0].toUpperCase(),createdAt:Date.now()};users.push(u);sv('users',users);app.login(u)}
+  return e('div',{className:'auth-page'},
+    e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
+    e('div',{className:'auth-bg'}),
+    e('form',{className:'auth-card',onSubmit:sub},
+      e('div',{className:'auth-logo'},e('div',{className:'auth-logo-icon'},'C'),e('h2',null,'ChartGen'),e('p',null,'Create your account')),
+      err&&e('div',{className:'auth-error'},err),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'Full Name'),e('input',{className:'form-input',type:'text',placeholder:'John Doe',value:nm,onChange:function(ev){setNm(ev.target.value)}})),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'Email'),e('input',{className:'form-input',type:'email',placeholder:'you@example.com',value:em,onChange:function(ev){setEm(ev.target.value)}})),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'Password'),e('input',{className:'form-input',type:'password',placeholder:'••••••••',value:pw,onChange:function(ev){setPw(ev.target.value)}})),
+      e('button',{className:'btn-primary',type:'submit'},'Create Account'),
+      e('p',{className:'auth-switch'},'Already have an account? ',e('a',{onClick:p.onSwitch},'Sign In'))
+    )
+  )
 }
+
+/* LANGUAGES DROPDOWN */
+var LANG_LIST=Object.keys(LANGUAGES).map(function(k){return{code:k,name:LANGUAGES[k].name,ttsCode:LANGUAGES[k].code}});
 
 /* SIDEBAR */
 function Sidebar(p){
@@ -182,9 +209,13 @@ function Sidebar(p){
     {key:'chat',icon:'message-square',label:'AI Chat'},
     {key:'workspaces',icon:'users',label:'Workspaces'},
     {key:'tasks',icon:'check-square',label:'Tasks'},
-    {key:'study',icon:'book-open',label:'Study Hub'},
+    {key:'study',icon:'book-open',label:'Study Hub'}
   ];
-  return e('aside',{className:'sidebar'+(p.collapsed?' collapsed':'')},
+  var isHost=app.p2pRole==='host';
+  var isGuest=app.p2pRole==='guest';
+  var p2pLabel=isHost?'Hosting':(isGuest?'Connected':'Offline');
+  var p2pColor=isHost||isGuest?'var(--green-400)':'var(--text-muted)';
+  return e('aside',{className:'sidebar'+(p.collapsed?' collapsed':'')+(app.mobileOpen?' mobile-open':'')},
     e('div',{className:'sidebar-header'},
       e('div',{className:'sidebar-logo'},'C'),
       e('div',{className:'sidebar-brand'},e('h1',null,'ChartGen'),e('span',null,'Smart AI Assistant'))
@@ -201,9 +232,22 @@ function Sidebar(p){
           app.sessions.map(function(s){return e('div',{key:s.id,className:'session-item'+(app.activeSession===s.id?' active':''),onClick:function(){app.setActiveSession(s.id)}},
             e(Ic,{name:'message-circle',size:16}),
             e('span',null,s.title||'New Chat'),
+            e('span',{className:'session-tag tag-'+(s.tag||'general').toLowerCase()},s.tag||'General'),
             e('span',{className:'session-delete',onClick:function(ev){ev.stopPropagation();app.deleteSession(s.id)}},e(Ic,{name:'x',size:14}))
           )})
         )
+      ),
+      !p.collapsed&&e('div',{style:{padding:'12px 14px'}},
+        e('div',{className:'nav-section-label',style:{padding:0,marginBottom:8}},'Collaborators'),
+        e('div',{style:{display:'flex',flexWrap:'wrap',gap:6,marginBottom:8}},
+          app.activeSession&&(app.sessions.find(function(s){return s.id===app.activeSession})?.members||[{id:app.user.id,name:app.user.name,avatar:app.user.avatar}]).map(function(m){return e('div',{key:m.id,className:'collab-avatar'+(app.activeMemberId===m.id?' active':''),title:m.name,onClick:function(){app.setActiveMemberId(m.id)}},m.avatar||m.name[0])})
+        ),
+        e('button',{className:'add-collab-btn',onClick:function(){app.openPrompt('Enter collaborator name:','Add Collaborator',function(nm){if(!nm)return;var s=app.sessions.find(function(s){return s.id===app.activeSession});if(!s)return;var m={id:uid(),name:nm,avatar:nm[0].toUpperCase()};s.members=s.members||[];s.members.push(m);app.updateSession(s.id,{members:s.members})})}},e(Ic,{name:'plus',size:14}),' Add')
+      ),
+      !p.collapsed&&e('div',{style:{padding:'6px 14px',display:'flex',alignItems:'center',gap:8,fontSize:'var(--fs-xs)',color:'var(--text-muted)'}},
+        e(Ic,{name:'wifi',size:14}),
+        e('span',{style:{color:p2pColor}},p2pLabel),
+        (isHost||isGuest)&&e('span',{style:{fontSize:'10px',color:'var(--text-muted)'}},'Room: '+(app.p2pRoomId||'-'))
       )
     ),
     e('div',{className:'sidebar-footer'},
@@ -213,7 +257,10 @@ function Sidebar(p){
           e('div',{className:'online-status-dot'})
         ),
         !p.collapsed&&e('div',{className:'user-info'},e('div',{className:'user-name'},app.user.name),e('div',{className:'user-email'},app.user.email)),
-        !p.collapsed&&e('button',{className:'logout-btn',onClick:app.logout,title:'Logout'},e(Ic,{name:'log-out',size:18}))
+        e('div',{style:{display:'flex',gap:4,marginLeft:'auto'}},
+          e('button',{className:'topbar-icon-btn',style:{width:32,height:32},title:'Toggle Sidebar',onClick:p.onToggle},e(Ic,{name:'bars',size:16})),
+          e('button',{className:'topbar-icon-btn',style:{width:32,height:32},title:'Logout',onClick:app.logout},e(Ic,{name:'log-out',size:16}))
+        )
       )
     )
   )
@@ -221,71 +268,83 @@ function Sidebar(p){
 
 /* TOPBAR */
 function TopBar(){
-var app=useApp();
-var titles={dashboard:'Dashboard',chat:'AI Chat',workspaces:'Workspaces',tasks:'Task Manager',study:'Study Hub',settings:'Settings'};
-return e('div',{className:'topbar'},
-e('div',{className:'topbar-left'},e('div',null,e('div',{className:'topbar-title'},titles[app.page]||'ChartGen'),e('div',{className:'topbar-subtitle'},'Think together, build smarter'))),
-e('div',{className:'topbar-right'},
-app.page==='chat'&&e('div',{className:'topbar-model-selector'},
-MODELS.map(function(m){return e('button',{key:m.id,className:'model-tab'+(app.model===m.id?' active':''),onClick:function(){app.setModel(m.id)}},m.label)})
-),
-e('div',{className:'topbar-icon-btn',title:'Notifications'},e(Ic,{name:'bell',size:20})),
-e('div',{className:'topbar-icon-btn',title:'Logout',onClick:app.logout},e(Ic,{name:'log-out',size:20}))
-)
-)
+  var app=useApp();
+  var titles={dashboard:'Dashboard',chat:'AI Chat',workspaces:'Workspaces',tasks:'Task Manager',study:'Study Hub',settings:'Settings'};
+  return e('div',{className:'topbar'},
+    e('div',{className:'topbar-left'},
+      e('button',{className:'topbar-icon-btn',style:{width:32,height:32,marginRight:4},onClick:function(){app.setMobileOpen(!app.mobileOpen)},title:'Menu'},e(Ic,{name:'bars',size:18})),
+      e('div',null,e('div',{className:'topbar-title'},titles[app.page]||'ChartGen'),e('div',{className:'topbar-subtitle'},'Think together, build smarter'))
+    ),
+    e('div',{className:'topbar-right'},
+      app.page==='chat'&&e('div',{className:'topbar-model-selector'},
+        MODELS.map(function(m){return e('button',{key:m.id,className:'model-tab'+(app.model===m.id?' active':''),onClick:function(){app.setModel(m.id)}},m.label)})
+      ),
+      e('div',{className:'topbar-icon-btn',title:'Language: '+app.language,style:{position:'relative'}},
+        e('select',{style:{position:'absolute',inset:0,opacity:0,cursor:'pointer'},value:app.language,onChange:function(ev){app.setLanguage(ev.target.value)}},LANG_LIST.map(function(l){return e('option',{key:l.code,value:l.code},l.name)})),
+        e(Ic,{name:'language',size:18})
+      ),
+      e('button',{className:'topbar-icon-btn'+(app.ttsMuted?' muted':''),title:app.ttsMuted?'TTS Muted':'TTS Active',onClick:function(){app.setTtsMuted(!app.ttsMuted)}},e(Ic,{name:app.ttsMuted?'volume-xmark':'volume-high',size:18})),
+      e('div',{className:'topbar-icon-btn',title:'Cloud Status',style:{color:'var(--green-400)'}},e(Ic,{name:'cloud',size:18})),
+      e('div',{className:'topbar-icon-btn',title:'Notifications',onClick:function(){app.setPage('notifications')}},e(Ic,{name:'bell',size:18}),app.notifications.length>0&&e('span',{className:'nav-badge',style:{position:'absolute',top:-4,right:-4,fontSize:9,padding:'1px 5px'}},app.notifications.length)),
+      e('div',{className:'user-avatar',style:{width:32,height:32,fontSize:12,cursor:'pointer'},onClick:function(){app.setPage('settings')}},app.user.avatar||'U')
+    )
+  )
 }
 
 /* DASHBOARD */
 function Dashboard(){
-var app=useApp();
-var cards=[
-{icon:'message-square',title:'AI Chat',desc:'Instant answers & creative brainstorming',color:'cyan',page:'chat'},
-{icon:'layout',title:'Workspaces',desc:'Collaborate on shared projects',color:'blue',page:'workspaces'},
-{icon:'check-square',title:'Tasks',desc:'Track goals & upcoming deadines',color:'cyan',page:'tasks'},
-{icon:'book',title:'Study Hub',desc:'AI notes & personalized study plans',color:'indigo',page:'study'},
-];
-
-function onMove(ev,card){var rect=ev.currentTarget.getBoundingClientRect();ev.currentTarget.style.setProperty('--x',(ev.clientX-rect.left)+'px');ev.currentTarget.style.setProperty('--y',(ev.clientY-rect.top)+'px')}
-
-return e('div',{className:'dashboard'},
-e('div',{className:'dashboard-hero'},
-e('h2',null,'Welcome back, ',e('span',{className:'hero-reveal'},app.user.name.split(' ')[0])),
-e('p',null,'You have 3 active projects and 5 pending tasks. Ready to build something great today?')
-),
-e('div',{className:'dashboard-grid'},
-cards.map(function(c,i){return e('div',{key:i,className:'dash-card',onMouseMove:onMove,onClick:function(){app.setPage(c.page)}},
-e('div',{className:'dash-card-icon '+c.color},e(Ic,{name:c.icon,size:24})),
-e('h3',null,c.title),e('p',null,c.desc)
-)})
-),
-e('div',{className:'dashboard-row'},
-e('div',{className:'tasks-summary'},
-e('h3',{style:{marginBottom:16,fontFamily:'var(--font-display)',fontWeight:800}},'Recent ',e('span',null,'Activity')),
-e('div',{className:'stats-grid'},
-[{val:app.tasks.length,label:'Total Tasks'},{val:app.tasks.filter(t=>t.status==='done').length,label:'Completed'},{val:app.sessions.length,label:'Chat Sessions'}].map(function(s,i){return e('div',{key:i,className:'stat-card'},e('div',{className:'stat-value'},s.val),e('div',{className:'stat-label'},s.label))})
-)
-),
-e('div',{className:'ai-insights-panel'},
-e('h3',{style:{marginBottom:16,fontSize:'var(--fs-md)',fontFamily:'var(--font-display)',fontWeight:800}},'AI ',e('span',null,'Insights')),
-[
-{icon:'🚀',title:'Productivity Peak',desc:'You work best between 10AM-12PM. Schedule deep work then.'},
-{icon:'💡',title:'Next Action',desc:'Break down the "Landing Page" task for faster progress.'},
-{icon:'📈',title:'Study Goal',desc:'You are 80% through the "React Basics" roadmap.'}
-].map(function(ins,i){return e('div',{key:i,className:'insight-item'},e('span',{className:'insight-icon'},ins.icon),e('div',{className:'insight-content'},e('h4',null,ins.title),e('p',null,ins.desc)))})
-)
-)
-)
+  var app=useApp();
+  var cards=[
+    {icon:'message-square',title:'AI Chat',desc:'Instant answers & creative brainstorming',color:'cyan',page:'chat'},
+    {icon:'users',title:'Workspaces',desc:'Collaborate on shared projects',color:'blue',page:'workspaces'},
+    {icon:'check-square',title:'Tasks',desc:'Track goals & upcoming deadlines',color:'cyan',page:'tasks'},
+    {icon:'book',title:'Study Hub',desc:'AI notes & personalized study plans',color:'indigo',page:'study'}
+  ];
+  return e('div',{className:'dashboard'},
+    e('div',{className:'dashboard-hero'},
+      e('h2',null,'Welcome back, ',e('span',{className:'hero-reveal'},app.user.name.split(' ')[0])),
+      e('p',null,'You have '+app.tasks.length+' tasks and '+app.sessions.length+' chat sessions. Ready to build something great today?')
+    ),
+    e('div',{className:'dashboard-grid'},
+      cards.map(function(c,i){return e('div',{key:i,className:'dash-card',onMouseMove:function(ev){var rect=ev.currentTarget.getBoundingClientRect();ev.currentTarget.style.setProperty('--x',(ev.clientX-rect.left)+'px');ev.currentTarget.style.setProperty('--y',(ev.clientY-rect.top)+'px')},onClick:function(){app.setPage(c.page)}},
+        e('div',{className:'dash-card-icon '+c.color},e(Ic,{name:c.icon,size:24})),
+        e('h3',null,c.title),e('p',null,c.desc)
+      )})
+    ),
+    e('div',{className:'dashboard-row'},
+      e('div',{className:'tasks-summary'},
+        e('h3',{style:{marginBottom:16,fontFamily:'var(--font-display)',fontWeight:800}},'Recent ',e('span',null,'Activity')),
+        e('div',{className:'stats-grid'},[
+          {val:app.tasks.length,label:'Total Tasks'},{val:app.tasks.filter(function(t){return t.status==='done'}).length,label:'Completed'},{val:app.sessions.length,label:'Chat Sessions'},{val:app.sessions.reduce(function(a,s){return a+s.messages.length},0),label:'Total Messages'}
+        ].map(function(s,i){return e('div',{key:i,className:'stat-card'},e('div',{className:'stat-value'},s.val),e('div',{className:'stat-label'},s.label))}))
+      ),
+      e('div',{className:'ai-insights-panel'},
+        e('h3',{style:{marginBottom:16,fontSize:'var(--fs-md)',fontFamily:'var(--font-display)',fontWeight:800}},'AI ',e('span',null,'Insights')),
+        [
+          {icon:'🚀',title:'Productivity Peak',desc:'You work best between 10AM-12PM. Schedule deep work then.'},
+          {icon:'💡',title:'Next Action',desc:'Break down your largest task for faster progress.'},
+          {icon:'📈',title:'Chat Activity',desc:'You have '+app.sessions.length+' active conversations.'}
+        ].map(function(ins,i){return e('div',{key:i,className:'insight-item'},e('span',{className:'insight-icon'},ins.icon),e('div',{className:'insight-content'},e('h4',null,ins.title),e('p',null,ins.desc)))})
+      )
+    )
+  )
 }
 
-/* CHAT VIEW */
+/* CHAT VIEW — Full Featured */
 function ChatView(){
   var app=useApp();
-  var _1=S(''),input=_1[0],setInput=_1[1];
-  var _2=S(false),loading=_2[0],setLoading=_2[1];
-  var endRef=R(null);var inRef=R(null);
+  var _i=S(''),input=_i[0],setInput=_i[1];
+  var _l=S(false),loading=_l[0],setLoading=_l[1];
+  var endRef=R(null);var inRef=R(null);var msgsRef=R(null);
   var session=app.sessions.find(function(s){return s.id===app.activeSession});
   var messages=session&&session.messages||[];
   var _tu=S(null),typingUser=_tu[0],setTypingUser=_tu[1];
+  var _sr=S(false),showRec=_sr[0],setShowRec=_sr[1];
+  var _rec=S(null),recognition=_rec[0],setRecognition=_rec[1];
+  var _mm=S({show:false,type:'',data:''}),mediaModal=_mm[0],setMediaModal=_mm[1];
+  var _qr=S({show:false,url:''}),qrModal=_qr[0],setQrModal=_qr[1];
+  var _p2pl=S({show:false,onJoin:null}),p2pLogin=_p2pl[0],setP2pLogin=_p2pl[1];
+  var ctx=Suggestion={show:false,items:[]};
 
   E(function(){
     if(app.socket){
@@ -296,306 +355,754 @@ function ChatView(){
   E(function(){if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'})},[messages.length,loading,typingUser]);
   E(function(){if(inRef.current)inRef.current.focus()},[app.activeSession]);
 
+  /* Leaflet Maps Init after render */
+  E(function(){
+    if(!msgsRef.current)return;
+    var maps=msgsRef.current.querySelectorAll('.chat-map:not(.leaflet-container)');
+    maps.forEach(function(mapEl){
+      var lat=parseFloat(mapEl.dataset.lat);
+      var lng=parseFloat(mapEl.dataset.lng);
+      var label=mapEl.dataset.label||'Location';
+      if(isNaN(lat)||isNaN(lng))return;
+      try{
+        var map=L.map(mapEl).setView([lat,lng],14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+        L.marker([lat,lng]).addTo(map).bindPopup(label).openPopup();
+      }catch(e){}
+    });
+  },[messages]);
+
+  /* Voice Recognition */
+  function toggleVoice(){
+    if(showRec&&recognition){recognition.abort();setShowRec(false);return}
+    try{
+      var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!SR){alert('Speech recognition not supported in this browser.');return}
+      var r=new SR();
+      r.lang='en-US';
+      r.interimResults=false;
+      r.continuous=false;
+      r.onresult=function(e){var t=e.results[0][0].transcript;setInput(t);setShowRec(false);send(t)};
+      r.onerror=function(){setShowRec(false)};
+      r.onend=function(){setShowRec(false)};
+      r.start();
+      setRecognition(r);
+      setShowRec(true);
+    }catch(e){alert('Voice input error: '+e.message);setShowRec(false)}
+  }
+
+  /* TTS */
+  function speak(text){
+    if(app.ttsMuted)return;
+    var langCode=LANGUAGES[app.language]?LANGUAGES[app.language].code:'en-US';
+    speakText(text,langCode);
+  }
+
+  /* Handle Map Tags in Content */
+  function processContent(content){
+    return content.replace(/<MAP\s+([\d.-]+),([\d.-]+),(.*?)>/g,function(m,lat,lng,label){
+      return '<div class="chat-map" data-lat="'+lat+'" data-lng="'+lng+'" data-label="'+label.replace(/"/g,'&quot;')+'" style="height:200px;width:100%;border-radius:8px;margin:10px 0;border:1px solid var(--border-glass);z-index:1"></div>';
+    });
+  }
+
   async function send(text){
     if(!text||!text.trim()||loading)return;
-    var userMsg={id:uid(),role:'user',content:text.trim(),timestamp:Date.now(),emotion:detectEmo(text),model:app.model};
-    var newMsgs=messages.concat([userMsg]);
-    var title=messages.length===0?text.trim().slice(0,40):session.title;
-    app.updateSession(app.activeSession,{messages:newMsgs,title:title});
-    if(app.socket) app.socket.emit('chat-update', { sessionId: app.activeSession, messages: newMsgs });
+    var trimmed=text.trim();
+    var langDetect=detectLanguage(trimmed);
+    var tag=detectSessionTag(trimmed);
+    var userMsg={id:uid(),role:'user',content:trimmed,timestamp:Date.now(),emotion:detectEmo(trimmed),model:app.model,memberName:app.activeMemberId?((session?.members||[]).find(function(m){return m.id===app.activeMemberId})?.name||app.user.name):app.user.name};
+    session=app.sessions.find(function(s){return s.id===app.activeSession});
+    var newMsgs=(session?session.messages:[]).concat([userMsg]);
+    var title=!session||session.messages.length===0?trimmed.slice(0,40):session.title;
+    app.updateSession(app.activeSession,{messages:newMsgs,title:title,tag:tag});
     setInput('');setLoading(true);
+    var histMsgs=newMsgs;
     try{
-      var reply=await callOpenRouter(text.trim(),newMsgs,app.apiKeys.openrouter,app.model);
+      /* Smart Intent Detection */
+      var intent=CHARTGEN_API.detectIntent(trimmed);
+      var reply=null;
+      if(intent.type!=='chat'){
+        var intentReply=await CHARTGEN_API.handleIntent(intent,app.apiKeys.gnews);
+        if(intentReply){
+          reply=intentReply;
+        }
+      }
+      if(!reply){
+        reply=await callOpenRouter(trimmed,histMsgs,app.apiKeys.openrouter,app.model);
+      }
+      /* Handle dynamic background command */
+      if(reply.indexOf('<EXECUTE_CMD>CHANGE_BG:')>=0){
+        var bgMatch=reply.match(/<EXECUTE_CMD>CHANGE_BG:(.*?)<\/EXECUTE_CMD>/);
+        if(bgMatch&&bgMatch[1]){
+          app.setBackground(bgMatch[1]);
+          reply=reply.replace(/<EXECUTE_CMD>CHANGE_BG:.*?<\/EXECUTE_CMD>/g,'');
+        }
+      }
       var aiMsg={id:uid(),role:'assistant',content:reply,timestamp:Date.now(),model:app.model,emotion:'neutral'};
-      app.updateSession(app.activeSession,{messages:newMsgs.concat([aiMsg]),title:title});
+      var finalMsgs=histMsgs.concat([aiMsg]);
+      app.updateSession(app.activeSession,{messages:finalMsgs,title:title,tag:tag});
+      /* TTS */
+      if(!app.ttsMuted){
+        var plainText=reply.replace(/<[^>]*>/g,'').replace(/[#*`\[\]()>|~\-_]/g,'').replace(/\n+/g,' ').trim();
+        if(plainText.length>0&&plainText.length<300){speak(plainText)}
+      }
     }catch(err){
       var errMsg={id:uid(),role:'assistant',content:'⚠️ **Error:** '+err.message+'\n\nPlease check your API key in Settings.',timestamp:Date.now(),model:app.model};
-      app.updateSession(app.activeSession,{messages:newMsgs.concat([errMsg]),title:title});
+      app.updateSession(app.activeSession,{messages:histMsgs.concat([errMsg]),title:title,tag:tag});
     }
     setLoading(false);
   }
 
   function onKey(ev){if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();send(input)}}
   function autoR(ev){ev.target.style.height='auto';ev.target.style.height=Math.min(ev.target.scrollHeight,150)+'px'}
-  function handleTyping(ev){
-    setInput(ev.target.value); autoR(ev);
-    if(app.socket) app.socket.emit('typing', { userId: app.user.id, userName: app.user.name, workspaceId: WS_ID, isTyping: !!ev.target.value });
+  function handleTyping(ev){setInput(ev.target.value);autoR(ev);if(app.socket)app.socket.emit('typing',{userId:app.user.id,userName:app.user.name,workspaceId:ld('activeWorkspace','default'),isTyping:!!ev.target.value})}
+
+  /* Media Upload */
+  function handleMediaUpload(type){
+    var inp=document.createElement('input');
+    inp.type='file';
+    inp.accept=type==='image'?'image/*':'video/*';
+    inp.onchange=function(ev){
+      var file=ev.target.files[0];
+      if(!file)return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var data=e.target.result;
+        if(type==='image'){
+          setMediaModal({show:true,type:'image',data:data});
+        }else{
+          setMediaModal({show:true,type:'video',data:data});
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    inp.click();
   }
+
+  /* GPS Location */
+  function shareLocation(){
+    if(!navigator.geolocation){alert('Geolocation not supported');return}
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(async function(pos){
+      try{
+        var lat=pos.coords.latitude;
+        var lng=pos.coords.longitude;
+        var geo=await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng);
+        var gd=await geo.json();
+        var label=gd.display_name||'My Location';
+        var locationText='📍 **My Location**\n\n<MAP '+lat+','+lng+','+label+'>';
+        var userMsg={id:uid(),role:'user',content:'📍 Sharing my location...',timestamp:Date.now(),model:app.model};
+        var newMsgs=(session?session.messages:[]).concat([userMsg]);
+        app.updateSession(app.activeSession,{messages:newMsgs});
+        var aiMsg={id:uid(),role:'assistant',content:locationText,timestamp:Date.now(),model:app.model};
+        app.updateSession(app.activeSession,{messages:newMsgs.concat([aiMsg])});
+      }catch(err){
+        var errMsg={id:uid(),role:'assistant',content:'⚠️ Could not get location details.',timestamp:Date.now(),model:app.model};
+        app.updateSession(app.activeSession,{messages:(session?session.messages:[]).concat([errMsg])});
+      }
+      setLoading(false);
+    },function(){setLoading(false);alert('Could not get location.')},{enableHighAccuracy:true});
+  }
+
+  /* P2P — Host */
+  function hostP2P(){
+    if(!app.activeSession){alert('Create a chat session first');return}
+    var sId=app.activeSession;
+    var hostPeerId='chartgen-host-'+sId;
+    try{
+      var p=new Peer(hostPeerId);
+      app.setPeer(p);
+      app.setP2pRole('host');
+      app.setP2pRoomId(sId);
+      var qrUrl=window.location.origin+'?join='+hostPeerId;
+      setQrModal({show:true,url:qrUrl});
+      p.on('connection',function(conn){
+        conn.on('open',function(){
+          var session=app.sessions.find(function(s){return s.id===app.activeSession});
+          conn.send({type:'sync_history',messages:session?session.messages:[],title:session?session.title:'New Chat'});
+        });
+        conn.on('data',function(data){
+          if(data.type==='chat_message'){
+            var s=app.sessions.find(function(s){return s.id===app.activeSession});
+            if(s){
+              var newMsgs=s.messages.concat([data.message]);
+              app.updateSession(app.activeSession,{messages:newMsgs});
+            }
+          }
+          if(data.type==='typing'){
+            setTypingUser(data.userName);
+            setTimeout(function(){setTypingUser(null)},3000);
+          }
+          if(data.type==='clear_chat'){
+            app.updateSession(app.activeSession,{messages:[]});
+          }
+        });
+        app.setP2pConnections(function(prev){return prev.concat([conn])});
+      });
+      p.on('error',function(err){alert('P2P Error: '+err.message);app.setP2pRole(null)});
+    }catch(e){alert('P2P Error: '+e.message)}
+  }
+
+  /* P2P — Guest */
+  function joinP2P(hostId){
+    if(!hostId)return;
+    try{
+      var p=new Peer();
+      app.setPeer(p);
+      p.on('open',function(id){
+        var conn=p.connect(hostId);
+        conn.on('open',function(){
+          app.setP2pRole('guest');
+          app.setP2pRoomId(hostId);
+          app.setP2pConnections([conn]);
+          conn.on('data',function(data){
+            if(data.type==='sync_history'){
+              app.updateSession(app.activeSession,{
+                messages:data.messages||[],
+                title:data.title||'Synced Chat'
+              });
+            }
+            if(data.type==='chat_message'){
+              var s=app.sessions.find(function(s){return s.id===app.activeSession});
+              if(s){
+                var newMsgs=s.messages.concat([data.message]);
+                app.updateSession(app.activeSession,{messages:newMsgs});
+              }
+            }
+          });
+        });
+        conn.on('error',function(err){alert('P2P Connection error');app.setP2pRole(null)});
+      });
+      p.on('error',function(err){alert('P2P Error: '+err.message);app.setP2pRole(null)});
+    }catch(e){alert('P2P Error: '+e.message)}
+  }
+
+  function shareViaP2P(msg){
+    app.p2pConnections.forEach(function(conn){
+      if(conn.open){conn.send({type:'chat_message',message:msg})}
+    });
+  }
+
+  /* Quick suggestions */
+  var suggestions=[
+    'What is the weather in London?',
+    'Tell me a joke',
+    'Explain quantum computing',
+    'Generate study notes for React',
+    'Translate hello to French',
+    'What is 100 USD to EUR?'
+  ];
 
   if(!session)return e('div',{className:'chat-container'},e('div',{className:'chat-welcome'},e('div',{className:'chat-welcome-icon'},e(Ic,{name:'sparkles',size:40})),e('h2',null,'Welcome to ',e('span',null,'ChartGen')),e('p',null,'Create a new chat session from the sidebar to begin.')));
 
-  return e('div',{className:'chat-container'},
-    messages.length===0?
-    e('div',{className:'chat-messages'},e('div',{className:'chat-welcome'},
-      e('div',{className:'chat-welcome-icon'},e(Ic,{name:'sparkles',size:40})),
-      e('h2',null,'How can I ',e('span',null,'help'),' you?'),
-      e('p',null,'Using '+(MODELS.find(function(m){return m.id===app.model})||MODELS[0]).name+' • Powered by OpenRouter')
-    )):
-    e('div',{className:'chat-messages'},
-      messages.map(function(m){
-        var isUser=m.role==='user';
-        var bubble;
-        if(isUser){bubble=e('div',{className:'message-bubble user-bubble'},m.content)}
-        else{var html=window.marked?window.marked.parse(m.content):m.content;bubble=e('div',{className:'message-bubble ai-bubble',dangerouslySetInnerHTML:{__html:html}})}
-        return e('div',{key:m.id,className:'message-row'+(isUser?' user':'')},
-          e('div',{className:'message-avatar'+(isUser?' user-av':' ai')},isUser?e(Ic,{name:'user',size:16}):'C'),
-          e('div',null,bubble,e('div',{className:'message-meta'},e('span',null,fmtTime(m.timestamp)),m.model&&e('span',{className:'message-model'},(MODELS.find(function(mdl){return mdl.id===m.model})||{}).label||m.model),m.emotion&&m.emotion!=='neutral'&&e('span',{className:'emotion-badge emotion-'+m.emotion},emoEmoji(m.emotion)+' '+m.emotion)))
-        )}),
-      typingUser&&e('div',{className:'message-row'},e('div',{className:'message-avatar ai'},'C'),e('div',{className:'message-bubble ai-bubble'},e('div',{className:'typing-indicator'},e('span',null,typingUser+' is thinking...'),e('div',{className:'dots'},e('span',null),e('span',null),e('span',null))))),
-      e('div',{ref:endRef})
-    ),
-    e('div',{className:'chat-input-area'},
-      e('div',{className:'chat-input-wrapper'},
-        e('textarea',{ref:inRef,className:'chat-input',rows:1,placeholder:'Message '+(MODELS.find(function(m){return m.id===app.model})||MODELS[0]).name+'...',value:input,onChange:handleTyping,onKeyDown:onKey,disabled:loading}),
-        e('button',{className:'chat-send-btn',onClick:function(){send(input)},disabled:!input.trim()||loading},e(Ic,{name:'send',size:20}))
+  return e(React.Fragment,null,
+    e('div',{className:'chat-container'},
+      messages.length===0?
+      e('div',{className:'chat-messages'},e('div',{ref:msgsRef,className:'chat-welcome'},
+        e('div',{className:'chat-welcome-icon'},e(Ic,{name:'sparkles',size:40})),
+        e('h2',null,'How can I ',e('span',null,'help'),' you?'),
+        e('p',null,'Using '+(MODELS.find(function(m){return m.id===app.model})||MODELS[0]).name+' • Powered by OpenRouter'),
+        e('div',{className:'suggestion-chips'},
+          suggestions.map(function(s,i){return e('button',{key:i,className:'suggestion-chip',onClick:function(){send(s)}},s)})
+        )
+      )):
+      e('div',{ref:msgsRef,className:'chat-messages'},
+        messages.map(function(m){
+          var isUser=m.role==='user';
+          var content=processContent(m.content);
+          var bubble;
+          if(isUser){
+            bubble=e('div',{className:'message-bubble user-bubble'},m.content);
+          }else{
+            var html=window.marked?window.marked.parse(content):content;
+            bubble=e('div',{className:'message-bubble ai-bubble',dangerouslySetInnerHTML:{__html:html}});
+          }
+          return e('div',{key:m.id,className:'message-row'+(isUser?' user':'')},
+            e('div',{className:'message-avatar'+(isUser?' user-av':' ai')+((!isUser&&app.sessionMemberName)?' small':'')},isUser?e(Ic,{name:'user',size:16}):'C'),
+            e('div',{style:{maxWidth:'80%'}},
+              e('span',{style:{fontSize:'var(--fs-xs)',color:'var(--text-muted)',marginBottom:2,display:'block'}},m.memberName||(isUser?app.user.name:'ChartGen')),
+              bubble,
+              e('div',{className:'message-meta'},
+                e('span',null,fmtTime(m.timestamp)),
+                m.model&&e('span',{className:'message-model'},(MODELS.find(function(mdl){return mdl.id===m.model})||{}).label||m.model),
+                m.emotion&&m.emotion!=='neutral'&&e('span',{className:'emotion-badge emotion-'+m.emotion},emoEmoji(m.emotion)+' '+m.emotion)
+              )
+            )
+          )
+        }),
+        typingUser&&e('div',{className:'message-row'},e('div',{className:'message-avatar ai'},'C'),e('div',null,e('div',{className:'message-bubble ai-bubble',style:{display:'flex',alignItems:'center',gap:10}},e('span',{style:{fontSize:'var(--fs-sm)',color:'var(--text-muted)'}},typingUser+' is thinking'),e('div',{className:'typing-indicator'},e('span',{className:'typing-dot'}),e('span',{className:'typing-dot'}),e('span',{className:'typing-dot'}))))),
+        e('div',{ref:endRef})
       ),
-      e('div',{className:'chat-hint'},(MODELS.find(function(m){return m.id===app.model})||MODELS[0]).name+' may produce inaccurate info. Enter to send, Shift+Enter for new line.')
+      e('div',{className:'chat-input-area'},
+        e('div',{className:'chat-input-wrapper'},
+          e('button',{className:'chat-send-btn',style:{width:34,height:34,background:'transparent',border:'1px solid var(--border-glass)',color:showRec?'var(--rose-400)':'var(--text-muted)'},onClick:toggleVoice,title:showRec?'Stop':'Voice Input'},e(Ic,{name:'microphone',size:16})),
+          e('button',{className:'chat-send-btn',style:{width:34,height:34,background:'transparent',border:'1px solid var(--border-glass)',color:'var(--text-muted)'},onClick:function(){handleMediaUpload('image')},title:'Upload Image'},e(Ic,{name:'image',size:16})),
+          e('button',{className:'chat-send-btn',style:{width:34,height:34,background:'transparent',border:'1px solid var(--border-glass)',color:'var(--text-muted)'},onClick:function(){handleMediaUpload('video')},title:'Upload Video'},e(Ic,{name:'video',size:16})),
+          e('button',{className:'chat-send-btn',style:{width:34,height:34,background:'transparent',border:'1px solid var(--border-glass)',color:'var(--text-muted)'},onClick:shareLocation,title:'Share Location'},e(Ic,{name:'location-dot',size:16})),
+          e('textarea',{ref:inRef,className:'chat-input',rows:1,placeholder:'Message '+(MODELS.find(function(m){return m.id===app.model})||MODELS[0]).name+'...',value:input,onChange:handleTyping,onKeyDown:onKey,disabled:loading}),
+          e('button',{className:'chat-send-btn',onClick:function(){send(input)},disabled:!input.trim()||loading,title:'Send'},e(Ic,{name:'send',size:20}))
+        ),
+        e('div',{className:'chat-hint'},e('span',{style:{cursor:'pointer',color:'var(--purple-400)'},onClick:function(){hostP2P()}},e(Ic,{name:'qrcode',size:12}),' Host P2P '),e('span',{style:{cursor:'pointer',color:'var(--green-400)',marginLeft:8},onClick:function(){setP2pLogin({show:true,onJoin:function(hostId){if(hostId)joinP2P(hostId);setP2pLogin({show:false,onJoin:null})}})}},e(Ic,{name:'link',size:12}),' Join P2P'),e('span',{style:{marginLeft:12,color:'var(--text-muted)'}},'Enter to send, Shift+Enter for new line'))
+      )
+    ),
+    /* Media Modal */
+    mediaModal.show&&e(MediaModal,{type:mediaModal.type,data:mediaModal.data,onClose:function(){setMediaModal({show:false,type:'',data:''})},onSave:function(result){
+      if(result){
+        var userMsg={id:uid(),role:'user',content:result.type==='image'?'📷 Sent an image':'🎬 Sent a video',timestamp:Date.now(),media:{type:result.type,data:result.data,metadata:result.metadata||{}},model:app.model};
+        var s=app.sessions.find(function(s){return s.id===app.activeSession});
+        var newMsgs=(s?s.messages:[]).concat([userMsg]);
+        app.updateSession(app.activeSession,{messages:newMsgs});
+      }
+      setMediaModal({show:false,type:'',data:''})
+    }}),
+    /* QR Modal */
+    qrModal.show&&e(QRModal,{url:qrModal.url,onClose:function(){setQrModal({show:false,url:''})}}),
+    /* P2P Login Modal */
+    p2pLogin.show&&e(P2PLoginModal,{onJoin:p2pLogin.onJoin,onClose:function(){setP2pLogin({show:false,onJoin:null})}})
+  )
+}
+
+/* MEDIA MODAL — Image Canvas + Video Controls */
+function MediaModal(p){
+  var _b=S(100),brightness=_b[0],setBrightness=_b[1];
+  var _c=S(100),contrast=_c[0],setContrast=_c[1];
+  var _g=S(0),grayscale=_g[0],setGrayscale=_g[1];
+  var canvasRef=R(null);
+  var imgRef=R(null);
+  var _trimS=S(0),trimStart=_trimS[0],setTrimStart=_trimS[1];
+  var _trimE=S(100),trimEnd=_trimE[0],setTrimEnd=_trimE[1];
+  var _sp=S(1),speed=_sp[0],setSpeed=_sp[1];
+  var _mute=S(false),muted=_mute[0],setMuted=_mute[1];
+  var videoRef=R(null);
+  var isImage=p.type==='image';
+
+  function applyFilters(){
+    var canvas=canvasRef.current;
+    var img=imgRef.current;
+    if(!canvas||!img)return;
+    canvas.width=img.naturalWidth;
+    canvas.height=img.naturalHeight;
+    var ctx=canvas.getContext('2d');
+    ctx.filter='brightness('+brightness+'%) contrast('+contrast+'%) grayscale('+grayscale+'%)';
+    ctx.drawImage(img,0,0);
+  }
+
+  E(function(){
+    if(isImage&&imgRef.current){
+      imgRef.current.onload=applyFilters;
+      if(imgRef.current.complete)applyFilters();
+    }
+  },[isImage,brightness,contrast,grayscale]);
+
+  function saveImage(){
+    var canvas=canvasRef.current;
+    if(!canvas)return;
+    var data=canvas.toDataURL('image/jpeg',0.8);
+    p.onSave({type:'image',data:data,metadata:{brightness:brightness,contrast:contrast,grayscale:grayscale}});
+  }
+
+  function saveVideo(){
+    if(!videoRef.current)return;
+    p.onSave({type:'video',data:p.data,metadata:{trimStart:trimStart,trimEnd:trimEnd,speed:speed,muted:muted}});
+  }
+
+  return e('div',{className:'modal-overlay',onClick:p.onClose},
+    e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()},style:{maxWidth:600,width:'92vw',maxHeight:'90vh',overflow:'auto'}},
+      e('div',{className:'modal-header'},
+        e('h3',null,isImage?'Image Editor':'Video Editor'),
+        e('button',{className:'modal-close',onClick:p.onClose},e(Ic,{name:'x',size:18}))
+      ),
+      isImage?e('div',null,
+        e('div',{style:{position:'relative',marginBottom:12,borderRadius:'var(--radius-md)',overflow:'hidden',background:'#000',maxHeight:300,display:'flex',alignItems:'center',justifyContent:'center'}},
+          e('img',{ref:imgRef,src:p.data,style:{maxWidth:'100%',maxHeight:300,display:'none'}}),
+          e('canvas',{ref:canvasRef,style:{maxWidth:'100%',maxHeight:300}})
+        ),
+        e('div',{style:{display:'flex',flexDirection:'column',gap:8}},
+          e('div',null,e('label',{className:'form-label'},'Brightness: '+brightness+'%'),e('input',{type:'range',min:0,max:200,value:brightness,onChange:function(ev){setBrightness(parseInt(ev.target.value))},style:{width:'100%'}})),
+          e('div',null,e('label',{className:'form-label'},'Contrast: '+contrast+'%'),e('input',{type:'range',min:0,max:200,value:contrast,onChange:function(ev){setContrast(parseInt(ev.target.value))},style:{width:'100%'}})),
+          e('div',null,e('label',{className:'form-label'},'Grayscale: '+grayscale+'%'),e('input',{type:'range',min:0,max:100,value:grayscale,onChange:function(ev){setGrayscale(parseInt(ev.target.value))},style:{width:'100%'}})),
+          e('button',{className:'btn-primary',onClick:saveImage},e(Ic,{name:'check',size:16}),' Send Image')
+        )
+      ):e('div',null,
+        e('div',{style:{marginBottom:12,borderRadius:'var(--radius-md)',overflow:'hidden',background:'#000'}},
+          e('video',{ref:videoRef,src:p.data,controls:true,style:{width:'100%',maxHeight:250}})
+        ),
+        e('div',{style:{display:'flex',flexDirection:'column',gap:8}},
+          e('div',null,e('label',{className:'form-label'},'Trim Start: '+trimStart+'%'),e('input',{type:'range',min:0,max:100,value:trimStart,onChange:function(ev){setTrimStart(parseInt(ev.target.value))},style:{width:'100%'}})),
+          e('div',null,e('label',{className:'form-label'},'Trim End: '+trimEnd+'%'),e('input',{type:'range',min:0,max:100,value:trimEnd,onChange:function(ev){setTrimEnd(parseInt(ev.target.value))},style:{width:'100%'}})),
+          e('div',null,e('label',{className:'form-label'},'Speed: '+speed+'x'),e('input',{type:'range',min:0.25,max:3,step:0.25,value:speed,onChange:function(ev){setSpeed(parseFloat(ev.target.value))},style:{width:'100%'}})),
+          e('div',{style:{display:'flex',alignItems:'center',gap:8}},e('input',{type:'checkbox',id:'mute-cb',checked:muted,onChange:function(ev){setMuted(ev.target.checked)}}),e('label',{htmlFor:'mute-cb',style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)'}},'Mute video')),
+          e('button',{className:'btn-primary',onClick:saveVideo},e(Ic,{name:'check',size:16}),' Send Video')
+        )
+      )
+    )
+  )
+}
+
+/* QR MODAL */
+function QRModal(p){
+  var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(p.url);
+  function copyLink(){
+    if(navigator.clipboard){navigator.clipboard.writeText(p.url).then(function(){alert('Link copied!')})}
+  }
+  return e('div',{className:'modal-overlay',onClick:p.onClose},
+    e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()},style:{maxWidth:380,textAlign:'center'}},
+      e('div',{className:'modal-header'},
+        e('h3',null,'P2P Room QR Code'),
+        e('button',{className:'modal-close',onClick:p.onClose},e(Ic,{name:'x',size:18}))
+      ),
+      e('div',{style:{padding:20}},
+        e('img',{src:qrUrl,alt:'QR Code',style:{width:200,height:200,borderRadius:'var(--radius-md)',margin:'0 auto 16px',display:'block'}}),
+        e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)',marginBottom:12,wordBreak:'break-all'}},p.url),
+        e('button',{className:'btn-primary',style:{width:'auto',padding:'10px 24px'},onClick:copyLink},e(Ic,{name:'copy',size:16}),' Copy Link')
+      )
+    )
+  )
+}
+
+/* P2P LOGIN MODAL */
+function P2PLoginModal(p){
+  var _v=S(''),val=_v[0],setVal=_v[1];
+  return e('div',{className:'modal-overlay',onClick:p.onClose},
+    e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()},style:{maxWidth:400}},
+      e('div',{className:'modal-header'},
+        e('h3',null,'Join P2P Room'),
+        e('button',{className:'modal-close',onClick:p.onClose},e(Ic,{name:'x',size:18}))
+      ),
+      e('div',{className:'form-group'},
+        e('label',{className:'form-label'},'Host Peer ID'),
+        e('input',{className:'form-input',autoFocus:true,placeholder:'chartgen-host-xxx...',value:val,onChange:function(ev){setVal(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter'){p.onJoin(val)}}})
+      ),
+      e('button',{className:'btn-primary',onClick:function(){p.onJoin(val)}},e(Ic,{name:'link',size:16}),' Join Session')
     )
   )
 }
 
 /* TASK PAGE */
 function TaskPage(){
-var app=useApp();
-var _1=S(null),showAdd=_1[0],setShowAdd=_1[1];
-var _2=S(''),newT=_2[0],setNewT=_2[1];
-var cols=[{key:'todo',label:'To Do',icon:'circle'},{key:'progress',label:'In Progress',icon:'clock'},{key:'done',label:'Done',icon:'check-circle'}];
-
-function addT(status){if(!newT.trim())return;app.addTask({id:uid(),title:newT.trim(),status:status,priority:'medium',createdAt:Date.now()});setNewT('');setShowAdd(null)}
-function cycle(t){var nx={todo:'progress',progress:'done',done:'todo'};app.updateTask(t.id,{status:nx[t.status]})}
-function cycleP(t){var nx={low:'medium',medium:'high',high:'low'};app.updateTask(t.id,{priority:nx[t.priority]})}
-
-async function onMagic(goal){
-if(!goal)return;
-try{
-var p='Break down the goal "'+goal+'" into 4-6 granular, actionable tasks. Return ONLY a JSON array of strings. Example: ["Task 1", "Task 2"].';
-var reply=await callOpenRouter(p,[],app.apiKeys.openrouter,'openai/gpt-4o');
-var tasks=JSON.parse(reply.match(/\[.*\]/s)[0]);
-tasks.forEach(function(t){app.addTask({id:uid(),title:t,status:'todo',priority:'medium',createdAt:Date.now()})});
-}catch(err){alert('Magic Breakdown error: '+err.message)}
-}
-
-return e('div',{className:'task-page'},
-e('div',{className:'task-header'},e('h2',null,'Task ',e('span',null,'Manager')),e('button',{className:'btn-primary magic-btn',onClick:function(){app.openPrompt('Enter your goal (e.g. Build a portfolio website):','Magic Breakdown',onMagic)}},e(Ic,{name:'sparkles',size:18}),' Magic Breakdown')),
-e('div',{className:'task-board'},
-cols.map(function(col){return e('div',{key:col.key,className:'task-column'},
-e('div',{className:'task-column-header'},e('div',{className:'task-column-title'},e(Ic,{name:col.icon,size:16}),col.label),e('div',{className:'task-column-count'},app.tasks.filter(function(t){return t.status===col.key}).length)),
-app.tasks.filter(function(t){return t.status===col.key}).map(function(t){return e('div',{key:t.id,className:'task-card',onClick:function(){cycle(t)}},
-e('div',{className:'task-card-title'},t.title),
-e('div',{className:'task-card-footer'},
-e('span',{className:'task-priority priority-'+t.priority,onClick:function(ev){ev.stopPropagation();cycleP(t)}},t.priority),
-e('span',{className:'session-delete',style:{opacity:1,marginLeft:'auto'},onClick:function(ev){ev.stopPropagation();app.deleteTask(t.id)}},e(Ic,{name:'trash-2',size:14}))
-))}),
-showAdd===col.key?e('div',{style:{display:'flex',gap:6}},e('input',{className:'form-input',style:{fontSize:'0.82rem',padding:'8px'},autoFocus:true,placeholder:'Task title...',value:newT,onChange:function(ev){setNewT(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter')addT(col.key)}}),e('button',{className:'chat-send-btn',style:{width:34,height:34},onClick:function(){addT(col.key)}},e(Ic,{name:'plus',size:16}))):
-e('button',{className:'add-task-btn',onClick:function(){setShowAdd(col.key);setNewT('')}},e(Ic,{name:'plus',size:16}),' Add Task')
-)})
-)
-)
+  var app=useApp();
+  var _1=S(null),showAdd=_1[0],setShowAdd=_1[1];
+  var _2=S(''),newT=_2[0],setNewT=_2[1];
+  var cols=[{key:'todo',label:'To Do',icon:'circle'},{key:'progress',label:'In Progress',icon:'clock'},{key:'done',label:'Done',icon:'check-circle'}];
+  function addT(status){if(!newT.trim())return;app.addTask({id:uid(),title:newT.trim(),status:status,priority:'medium',createdAt:Date.now()});setNewT('');setShowAdd(null)}
+  function cycle(t){var nx={todo:'progress',progress:'done',done:'todo'};app.updateTask(t.id,{status:nx[t.status]})}
+  function cycleP(t){var nx={low:'medium',medium:'high',high:'low'};app.updateTask(t.id,{priority:nx[t.priority]})}
+  async function onMagic(goal){
+    if(!goal)return;
+    try{
+      var p='Break down the goal "'+goal+'" into 4-6 granular, actionable tasks. Return ONLY a JSON array of strings. Example: ["Task 1", "Task 2"].';
+      var reply=await callOpenRouter(p,[],app.apiKeys.openrouter,'openai/gpt-4o');
+      var tasks=JSON.parse(reply.match(/\[.*\]/s)[0]);
+      tasks.forEach(function(t){app.addTask({id:uid(),title:t,status:'todo',priority:'medium',createdAt:Date.now()})});
+    }catch(err){alert('Magic Breakdown error: '+err.message)}
+  }
+  return e('div',{className:'task-page'},
+    e('div',{className:'task-header'},e('h2',null,'Task ',e('span',null,'Manager')),e('button',{className:'btn-primary magic-btn',onClick:function(){app.openPrompt('Enter your goal (e.g. Build a portfolio website):','Magic Breakdown',onMagic)}},e(Ic,{name:'sparkles',size:18}),' Magic Breakdown')),
+    e('div',{className:'task-board'},
+      cols.map(function(col){return e('div',{key:col.key,className:'task-column'},
+        e('div',{className:'task-column-header'},e('div',{className:'task-column-title'},e(Ic,{name:col.icon,size:16}),col.label),e('div',{className:'task-column-count'},app.tasks.filter(function(t){return t.status===col.key}).length)),
+        app.tasks.filter(function(t){return t.status===col.key}).map(function(t){return e('div',{key:t.id,className:'task-card',onClick:function(){cycle(t)}},
+          e('div',{className:'task-card-title'},t.title),
+          e('div',{className:'task-card-footer'},
+            e('span',{className:'task-priority priority-'+t.priority,onClick:function(ev){ev.stopPropagation();cycleP(t)}},t.priority),
+            e('span',{className:'session-delete',style:{opacity:1,marginLeft:'auto'},onClick:function(ev){ev.stopPropagation();app.deleteTask(t.id)}},e(Ic,{name:'trash-2',size:14}))
+          )
+        )}),
+        showAdd===col.key?e('div',{style:{display:'flex',gap:6}},e('input',{className:'form-input',style:{fontSize:'0.82rem',padding:'8px'},autoFocus:true,placeholder:'Task title...',value:newT,onChange:function(ev){setNewT(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter')addT(col.key)}}),e('button',{className:'chat-send-btn',style:{width:34,height:34},onClick:function(){addT(col.key)}},e(Ic,{name:'plus',size:16}))):
+        e('button',{className:'add-task-btn',onClick:function(){setShowAdd(col.key);setNewT('')}},e(Ic,{name:'plus',size:16}),' Add Task')
+      )})
+    )
+  )
 }
 
 /* STUDY PAGE */
 function StudyPage(){
-var app=useApp();
-var cards=[
-{icon:'📝',title:'Generate Notes',desc:'AI-powered notes from any topic',color:'purple'},
-{icon:'📚',title:'Study Plans',desc:'Personalized study schedules',color:'blue'},
-{icon:'🧠',title:'Quiz Generator',desc:'Test knowledge with AI quizzes',color:'cyan'},
-{icon:'💡',title:'Concept Explainer',desc:'Get concepts explained at your level',color:'green'},
-{icon:'📊',title:'Progress Tracker',desc:'Track your learning journey',color:'purple'},
-{icon:'🎯',title:'Focus Mode',desc:'Distraction-free study with AI',color:'blue'},
-];
-async function onStudy(topic){
-if(!topic)return;
-try{
-app.setPage('chat');
-var p='Generate comprehensive study notes for: "'+topic+'". Include key concepts, bullet points, and code examples if relevant. Use professional, educational tone. Format with clear headings.';
-app.createSession();
-setTimeout(async function(){
-try{
-var reply=await callOpenRouter(p,[],app.apiKeys.openrouter,'openai/gpt-4o');
-app.updateSession(app.activeSession,{messages:[{role:'user',content:'Generate study notes for '+topic},{role:'assistant',content:reply,timestamp:Date.now(),model:app.model}],title:topic+' Notes'})
-}catch(e){alert('Study Hub error: '+e.message)}
-},500);
-}catch(err){alert('Study Hub error: '+err.message)}
-}
-
-return e('div',{className:'study-page'},
-e('h2',null,'Study ',e('span',null,'Hub')),
-e('div',{className:'study-grid'},cards.map(function(c,i){return e('div',{key:i,className:'study-card',style:{animationDelay:i*0.1+'s'},onClick:function(){app.openPrompt('What topic should I generate '+c.title+' for?','AI Study Generation',onStudy)}},
-e('div',{className:'study-card-icon dash-card-icon '+c.color},e('span',{style:{fontSize:24}},c.icon)),
-e('h3',null,c.title),e('p',null,c.desc)
-)}))
-)
+  var app=useApp();
+  var cards=[
+    {icon:'📝',title:'Generate Notes',desc:'AI-powered notes from any topic',color:'purple'},
+    {icon:'📚',title:'Study Plans',desc:'Personalized study schedules',color:'blue'},
+    {icon:'🧠',title:'Quiz Generator',desc:'Test knowledge with AI quizzes',color:'cyan'},
+    {icon:'💡',title:'Concept Explainer',desc:'Get concepts explained at your level',color:'green'},
+    {icon:'📊',title:'Progress Tracker',desc:'Track your learning journey',color:'purple'},
+    {icon:'🎯',title:'Focus Mode',desc:'Distraction-free study with AI',color:'blue'}
+  ];
+  async function onStudy(topic){
+    if(!topic)return;
+    try{
+      app.setPage('chat');
+      var p='Generate comprehensive study notes for: "'+topic+'". Include key concepts, bullet points, and code examples if relevant. Use professional, educational tone. Format with clear headings.';
+      app.createSession();
+      setTimeout(async function(){
+        try{
+          var reply=await callOpenRouter(p,[],app.apiKeys.openrouter,'openai/gpt-4o');
+          app.updateSession(app.activeSession,{messages:[{role:'user',content:'Generate study notes for '+topic},{role:'assistant',content:reply,timestamp:Date.now(),model:app.model}],title:topic+' Notes'})
+        }catch(e){alert('Study Hub error: '+e.message)}
+      },500);
+    }catch(err){alert('Study Hub error: '+err.message)}
+  }
+  return e('div',{className:'study-page'},
+    e('h2',null,'Study ',e('span',null,'Hub')),
+    e('div',{className:'study-grid'},cards.map(function(c,i){return e('div',{key:i,className:'study-card',style:{animationDelay:i*0.1+'s'},onClick:function(){app.openPrompt('What topic should I generate '+c.title+' for?','AI Study Generation',onStudy)}},
+      e('div',{className:'study-card-icon dash-card-icon '+c.color},e('span',{style:{fontSize:24}},c.icon)),
+      e('h3',null,c.title),e('p',null,c.desc)
+    )}))
+  )
 }
 
 /* WORKSPACES */
 function WorkspacePage(){
-var _1=S(false),show=_1[0],setShow=_1[1];
-var _2=S(''),wsN=_2[0],setWsN=_2[1];
-var _3=S(function(){return ld('workspaces',[{id:'ws1',name:'Product Team',desc:'Main product development workspace',members:['A','B','C']},{id:'ws2',name:'Study Group',desc:'Collaborative study sessions',members:['A','D']}])}),wss=_3[0],setWss=_3[1];
-
-function create(){if(!wsN.trim())return;var ws={id:uid(),name:wsN.trim(),desc:'New workspace',members:['Y']};var up=wss.concat([ws]);setWss(up);sv('workspaces',up);setWsN('');setShow(false)}
-
-return e('div',{className:'workspace-page'},
-e('h2',null,'Work',e('span',null,'spaces')),
-e('div',{className:'workspace-grid'},
-wss.map(function(ws){return e('div',{key:ws.id,className:'workspace-card'},
-e('div',{className:'workspace-card-header'},e('div',{className:'workspace-card-icon'},ws.name[0]),e('h3',null,ws.name)),
-e('p',null,ws.desc),
-e('div',{className:'workspace-members'},
-ws.members.map(function(m,i){return e('div',{key:i,className:'workspace-member-av'},m)}),
-e('span',{className:'workspace-member-count'},ws.members.length+' members')
-)
-)}),
-e('div',{className:'workspace-card',onClick:function(){setShow(true)},style:{display:'flex',alignItems:'center',justifyContent:'center',minHeight:160}},
-e('div',{style:{textAlign:'center',color:'var(--text-muted)'}},e(Ic,{name:'plus',size:32}),e('p',{style:{marginTop:8}},'Create Workspace'))
-)
-),
-show&&e('div',{className:'modal-overlay',onClick:function(){setShow(false)}},
-e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()}},
-e('div',{className:'modal-header'},e('h3',null,'New Workspace'),e('button',{className:'modal-close',onClick:function(){setShow(false)}},e(Ic,{name:'x',size:18}))),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'Workspace Name'),e('input',{className:'form-input',placeholder:'e.g. Project Alpha',value:wsN,onChange:function(ev){setWsN(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter')create()}})),
-e('button',{className:'btn-primary',onClick:create},'Create Workspace')
-))
-)
+  var _1=S(false),show=_1[0],setShow=_1[1];
+  var _2=S(''),wsN=_2[0],setWsN=_2[1];
+  var _3=S(function(){return ld('workspaces',[{id:'ws1',name:'Product Team',desc:'Main product development workspace',members:['A','B','C']},{id:'ws2',name:'Study Group',desc:'Collaborative study sessions',members:['A','D']}])}),wss=_3[0],setWss=_3[1];
+  function create(){if(!wsN.trim())return;var ws={id:uid(),name:wsN.trim(),desc:'New workspace',members:['Y']};var up=wss.concat([ws]);setWss(up);sv('workspaces',up);setWsN('');setShow(false)}
+  function delWs(id){var up=wss.filter(function(w){return w.id!==id});setWss(up);sv('workspaces',up)}
+  return e('div',{className:'workspace-page'},
+    e('h2',null,'Work',e('span',null,'spaces')),
+    e('div',{className:'workspace-grid'},
+      wss.map(function(ws){return e('div',{key:ws.id,className:'workspace-card'},
+        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+          e('div',{className:'workspace-card-header'},e('div',{className:'workspace-card-icon'},ws.name[0]),e('h3',null,ws.name)),
+          e('span',{className:'session-delete',style:{opacity:1,position:'relative'},onClick:function(ev){ev.stopPropagation();delWs(ws.id)}},e(Ic,{name:'trash-2',size:14}))
+        ),
+        e('p',null,ws.desc),
+        e('div',{className:'workspace-members'},
+          ws.members.map(function(m,i){return e('div',{key:i,className:'workspace-member-av'},m)}),
+          e('span',{className:'workspace-member-count'},ws.members.length+' members')
+        )
+      )}),
+      e('div',{className:'workspace-card',onClick:function(){setShow(true)},style:{display:'flex',alignItems:'center',justifyContent:'center',minHeight:160}},
+        e('div',{style:{textAlign:'center',color:'var(--text-muted)'}},e(Ic,{name:'plus',size:32}),e('p',{style:{marginTop:8}},'Create Workspace'))
+      )
+    ),
+    show&&e('div',{className:'modal-overlay',onClick:function(){setShow(false)}},
+      e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()}},
+        e('div',{className:'modal-header'},e('h3',null,'New Workspace'),e('button',{className:'modal-close',onClick:function(){setShow(false)}},e(Ic,{name:'x',size:18}))),
+        e('div',{className:'form-group'},e('label',{className:'form-label'},'Workspace Name'),e('input',{className:'form-input',placeholder:'e.g. Project Alpha',value:wsN,onChange:function(ev){setWsN(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter')create()}})),
+        e('button',{className:'btn-primary',onClick:create},'Create Workspace')
+      ))
+  )
 }
 
 /* SETTINGS */
 function SettingsPage(){
-var app=useApp();
-var _1=S(app.apiKeys.openrouter||''),ork=_1[0],setOrk=_1[1];
-var _2=S(false),saved=_2[0],setSaved=_2[1];
-
-function saveK(){app.setApiKeys({openrouter:ork});setSaved(true);setTimeout(function(){setSaved(false)},2000)}
-
-return e('div',{className:'settings-page'},
-e('h2',null,e('span',null,'Settings')),
-e('div',{className:'settings-section'},
-e('h3',null,'🔑 OpenRouter API Key'),
-e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)',marginBottom:12}},'OpenRouter gives you access to GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek, and 200+ models with a single key.'),
-e('div',{className:'form-group'},e('label',{className:'form-label'},'OpenRouter API Key'),e('input',{className:'form-input',type:'password',placeholder:'sk-or-v1-...',value:ork,onChange:function(ev){setOrk(ev.target.value)}})),
-e('button',{className:'btn-primary',style:{marginTop:8},onClick:saveK},saved?'✓ Saved!':'Save API Key')
-),
-e('div',{className:'settings-section'},
-e('h3',null,'👤 Profile'),
-e('div',{className:'settings-row'},e('label',null,'Name'),e('span',{style:{color:'var(--text-primary)'}},app.user&&app.user.name)),
-e('div',{className:'settings-row'},e('label',null,'Email'),e('span',{style:{color:'var(--text-primary)'}},app.user&&app.user.email))
-),
-e('div',{className:'settings-section'},
-e('h3',null,'ℹ️ About ChartGen'),
-e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)'}},'ChartGen Smart AI Assistant v1.0 — Powered by OpenRouter (GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek & more).')
-)
-)
+  var app=useApp();
+  var _1=S(app.apiKeys.openrouter||''),ork=_1[0],setOrk=_1[1];
+  var _2=S(app.apiKeys.gnews||''),gnk=_2[0],setGnk=_2[1];
+  var _3=S(false),saved=_3[0],setSaved=_3[1];
+  function saveK(){app.setApiKeys({openrouter:ork,gnews:gnk});setSaved(true);setTimeout(function(){setSaved(false)},2000)}
+  return e('div',{className:'settings-page'},
+    e('h2',null,e('span',null,'Settings')),
+    e('div',{className:'settings-section'},
+      e('h3',null,e(Ic,{name:'key',size:18,style:{marginRight:6}}),'OpenRouter API Key'),
+      e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)',marginBottom:12}},'OpenRouter gives you access to GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek, and 200+ models with a single key.'),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'OpenRouter API Key'),e('input',{className:'form-input',type:'password',placeholder:'sk-or-v1-...',value:ork,onChange:function(ev){setOrk(ev.target.value)}})),
+      e('button',{className:'btn-primary',style:{marginTop:8},onClick:saveK},saved?'✓ Saved!':'Save API Key')
+    ),
+    e('div',{className:'settings-section'},
+      e('h3',null,e(Ic,{name:'newspaper',size:18,style:{marginRight:6}}),'GNews API Key'),
+      e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)',marginBottom:12}},'Optional — required for news intent detection. Get a free key at gnews.io.'),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},'GNews API Key'),e('input',{className:'form-input',type:'password',placeholder:'...',value:gnk,onChange:function(ev){setGnk(ev.target.value)}}))
+    ),
+    e('div',{className:'settings-section'},
+      e('h3',null,e(Ic,{name:'user',size:18,style:{marginRight:6}}),'Profile'),
+      e('div',{className:'settings-row'},e('label',null,'Name'),e('span',{style:{color:'var(--text-primary)'}},app.user&&app.user.name)),
+      e('div',{className:'settings-row'},e('label',null,'Email'),e('span',{style:{color:'var(--text-primary)'}},app.user&&app.user.email)),
+      e('div',{className:'settings-row'},e('label',null,'Language'),e('span',{style:{color:'var(--text-primary)'}},(LANGUAGES[app.language]||{name:'English'}).name))
+    ),
+    e('div',{className:'settings-section'},
+      e('h3',null,e(Ic,{name:'circle-info',size:18,style:{marginRight:6}}),'About ChartGen'),
+      e('p',{style:{color:'var(--text-secondary)',fontSize:'var(--fs-sm)'}},'ChartGen Smart AI Assistant v3.0 — Merged with ChatZen features. Powered by OpenRouter (GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek & more). Real-time collaboration, P2P WebRTC, voice I/O, media editing, and smart intent detection.')
+    )
+  )
 }
 
-/* MODAL COMPONENTS */
+/* INPUT MODAL */
 function InputModal(p){
-var _1=S(''),val=_1[0],setVal=_1[1];
-if(!p.show)return null;
-return e('div',{className:'modal-overlay',onClick:p.onClose},
-e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()},style:{maxWidth:400,width:'90%'}},
-e('div',{className:'modal-header'},e('h3',null,p.title),e('button',{className:'modal-close',onClick:p.onClose},e(Ic,{name:'x',size:18}))),
-e('div',{className:'form-group'},e('label',{className:'form-label'},p.label),e('input',{className:'form-input',autoFocus:true,placeholder:'Type here...',value:val,onChange:function(ev){setVal(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter'){p.onConfirm(val);setVal('');p.onClose()}}})),
-e('button',{className:'btn-primary',onClick:function(){p.onConfirm(val);setVal('');p.onClose()}},'Submit')
-))
+  var _1=S(''),val=_1[0],setVal=_1[1];
+  if(!p.show)return null;
+  return e('div',{className:'modal-overlay',onClick:p.onClose},
+    e('div',{className:'modal-card',onClick:function(ev){ev.stopPropagation()},style:{maxWidth:400,width:'90%'}},
+      e('div',{className:'modal-header'},e('h3',null,p.title),e('button',{className:'modal-close',onClick:p.onClose},e(Ic,{name:'x',size:18}))),
+      e('div',{className:'form-group'},e('label',{className:'form-label'},p.label),e('input',{className:'form-input',autoFocus:true,placeholder:'Type here...',value:val,onChange:function(ev){setVal(ev.target.value)},onKeyDown:function(ev){if(ev.key==='Enter'){p.onConfirm(val);setVal('');p.onClose()}}})),
+      e('button',{className:'btn-primary',onClick:function(){p.onConfirm(val);setVal('');p.onClose()}},'Submit')
+    )
+  )
 }
 
 /* MAIN APP */
 function App(){
-var _u=S(function(){return ld('currentUser',null)}),user=_u[0],setUser=_u[1];
-var _ap=S('login'),authPage=_ap[0],setAuthPage=_ap[1];
-var _pg=S(function(){return user?'dashboard':'landing'}),page=_pg[0],setPage=_pg[1];
-var _md=S('openai/gpt-4o'),model=_md[0],setModel=_md[1];
-var _sc=S(false),collapsed=_sc[0],setCollapsed=_sc[1];
-var _ss=S(function(){return ld('sessions',[])}),sessions=_ss[0],setSessions=_ss[1];
-var _as=S(function(){return ld('activeSession',null)}),activeSession=_as[0],setActiveSession=_as[1];
-var _ts=S(function(){return ld('tasks',[])}),tasks=_ts[0],setTasks=_ts[1];
-var _ak=S(function(){return ld('apiKeys',{openrouter:''})}),apiKeys=_ak[0],setApiKeysRaw=_ak[1];
+  var _u=S(function(){return ld('currentUser',null)}),user=_u[0],setUser=_u[1];
+  var _ap=S('login'),authPage=_ap[0],setAuthPage=_ap[1];
+  var _pg=S(function(){return user?'dashboard':'landing'}),page=_pg[0],setPage=_pg[1];
+  var _md=S('openai/gpt-4o'),model=_md[0],setModel=_md[1];
+  var _sc=S(false),collapsed=_sc[0],setCollapsed=_sc[1];
+  var _mo=S(false),mobileOpen=_mo[0],setMobileOpen=_mo[1];
+  var _ss=S(function(){return ld('sessions',[])}),sessions=_ss[0],setSessions=_ss[1];
+  var _as=S(function(){return ld('activeSession',null)}),activeSession=_as[0],setActiveSession=_as[1];
+  var _ts=S(function(){return ld('tasks',[])}),tasks=_ts[0],setTasks=_ts[1];
+  var _ak=S(function(){return ld('apiKeys',{openrouter:'',gnews:''})}),apiKeys=_ak[0],setApiKeysRaw=_ak[1];
+  var _ln=S(function(){return ld('language','en')}),language=_ln[0],setLanguage=_ln[1];
+  var _tts=S(function(){return ld('ttsMuted',false)}),ttsMuted=_tts[0],setTtsMuted=_tts[1];
+  var _bg=S(null),background=_bg[0],setBackground=_bg[1];
+  var _notif=S([]),notifications=_notif[0],setNotifications=_notif[1];
+  var _am=S(null),activeMemberId=_am[0],setActiveMemberId=_am[1];
+  var _p2pRole=S(null),p2pRole=_p2pRole[0],setP2pRole=_p2pRole[1];
+  var _p2pRoom=S(null),p2pRoomId=_p2pRoom[0],setP2pRoomId=_p2pRoom[1];
+  var _p2pConns=S([]),p2pConnections=_p2pConns[0],setP2pConnections=_p2pConns[1];
+  var _peer=S(null),peer=_peer[0],setPeer=_peer[1];
 
-/* Prompt Modal State */
-var _pm=S({show:false,label:'',title:'',onConfirm:null}),pm=_pm[0],setPm=_pm[1];
-function openPrompt(label,title,onConfirm){setPm({show:true,label:label,title:title,onConfirm:onConfirm})}
-function closePrompt(){setPm(Object.assign({},pm,{show:false}))}
+  /* Prompt Modal State */
+  var _pm=S({show:false,label:'',title:'',onConfirm:null}),pm=_pm[0],setPm=_pm[1];
+  function openPrompt(label,title,onConfirm){setPm({show:true,label:label,title:title,onConfirm:onConfirm})}
+  function closePrompt(){setPm(Object.assign({},pm,{show:false}))}
 
-E(function(){sv('sessions',sessions)},[sessions]);
-E(function(){sv('activeSession',activeSession)},[activeSession]);
-E(function(){sv('tasks',tasks)},[tasks]);
+  E(function(){sv('sessions',sessions)},[sessions]);
+  E(function(){sv('activeSession',activeSession)},[activeSession]);
+  E(function(){sv('tasks',tasks)},[tasks]);
+  E(function(){sv('apiKeys',apiKeys)},[apiKeys]);
+  E(function(){sv('language',language)},[language]);
+  E(function(){sv('ttsMuted',ttsMuted)},[ttsMuted]);
 
-function login(u){setUser(u);sv('currentUser',u)}
-function logout(){setUser(null);sv('currentUser',null)}
-function setApiKeys(k){setApiKeysRaw(k);sv('apiKeys',k)}
-function createSession(){var s={id:uid(),title:'New Chat',messages:[],createdAt:Date.now()};setSessions(function(p){return[s].concat(p)});setActiveSession(s.id);setPage('chat')}
-function deleteSession(id){setSessions(function(p){return p.filter(function(s){return s.id!==id})});if(activeSession===id)setActiveSession(null)}
-function updateSession(id,up){setSessions(function(p){return p.map(function(s){return s.id===id?Object.assign({},s,up):s})})}
-
-/* Phase 5: Socket.io Real-time Client */
-var _sk=S(null),socket=_sk[0],setSocket=_sk[1];
-E(function(){
-  if(user){
-    var s=io('http://localhost:5000');
-    setSocket(s);
-    s.on('connect',function(){console.log('⚡ Connected to Real-time Backend')});
-    s.on('task-remote-update',function(d){setTasks(function(p){
-      if(d.type==='create') return [d.task].concat(p);
-      if(d.type==='delete') return p.filter(function(t){return t.id!==d.id});
-      return p.map(function(t){return t.id===d.id?Object.assign({},t,d.update):t})
-    })});
-    s.on('user-typing',function(d){if(d.userId!==user.id)console.log('User is typing:',d.userName)});
-    return function(){s.disconnect()}
+  function login(u){setUser(u);sv('currentUser',u)}
+  function logout(){
+    setUser(null);sv('currentUser',null);
+    if(peer){peer.destroy();setPeer(null)}
+    setP2pRole(null);setP2pRoomId(null);setP2pConnections([]);
   }
-},[user]);
-
-/* Auto-join workspace room */
-const WS_ID = ld('activeWorkspace', 'default-workspace');
-E(function(){if(socket&&user)socket.emit('join-workspace', WS_ID)},[socket,user]);
-
-/* Unified Data Actions (Local + Backend + Socket) */
-function deleteTask(id){
-  setTasks(function(p){return p.filter(function(t){return t.id!==id})});
-  BC.del('tasks',id).catch(function(){});
-  if(socket)socket.emit('task-update',{id:id,workspaceId:WS_ID,type:'delete'});
-}
-function addTask(t){
-  setTasks(function(p){return [t].concat(p)});
-  BC.post('tasks', t).catch(function(){});
-  if(socket)socket.emit('task-update',{task:t,workspaceId:WS_ID,type:'create'});
-}
-function updateTask(id,up){
-  setTasks(function(p){return p.map(function(t){return t.id===id?Object.assign({},t,up):t})});
-  BC.patch('tasks',id,up).catch(function(){});
-  if(socket)socket.emit('task-update',{id:id,update:up,workspaceId:WS_ID,type:'update'});
-}
-
-/* Backend Sync on Load */
-E(function(){
-  if(user){
-    BC.get('sessions').then(setSessions).catch(function(){});
-    BC.get('tasks').then(setTasks).catch(function(){});
+  function setApiKeys(k){setApiKeysRaw(k);sv('apiKeys',k)}
+  function createSession(){
+    var s={id:uid(),title:'New Chat',messages:[],tag:'General',members:[{id:user.id,name:user.name,avatar:user.avatar}],activeMemberId:user.id,createdAt:Date.now()};
+    setSessions(function(p){return[s].concat(p)});
+    setActiveSession(s.id);setPage('chat')
   }
-},[user]);
+  function deleteSession(id){
+    setSessions(function(p){return p.filter(function(s){return s.id!==id})});
+    if(activeSession===id)setActiveSession(null)
+  }
+  function updateSession(id,up){
+    setSessions(function(p){return p.map(function(s){return s.id===id?Object.assign({},s,up):s})})
+  }
+  function setActiveSession(id){
+    setActiveSession(id);
+    var s=sessions.find(function(s){return s.id===id});
+    if(s&&s.activeMemberId)setActiveMemberId(s.activeMemberId);
+  }
+  function setActiveMemberId(id){
+    setActiveMemberId(id);
+    if(activeSession){
+      updateSession(activeSession,{activeMemberId:id})
+    }
+  }
 
-var ctx={user:user,login:login,logout:logout,page:page,setPage:setPage,model:model,setModel:setModel,sessions:sessions,activeSession:activeSession,setActiveSession:setActiveSession,createSession:createSession,deleteSession:deleteSession,updateSession:updateSession,tasks:tasks,addTask:addTask,updateTask:updateTask,deleteTask:deleteTask,apiKeys:apiKeys,setApiKeys:setApiKeys,openPrompt:openPrompt,socket:socket};
+  /* Socket.io Real-time Client */
+  var _sk=S(null),socket=_sk[0],setSocket=_sk[1];
+  E(function(){
+    if(user){
+      var s=io('http://localhost:5000');
+      setSocket(s);
+      s.on('connect',function(){console.log('Connected to Real-time Backend')});
+      s.on('task-remote-update',function(d){
+        setTasks(function(p){
+          if(d.type==='create')return[d.task].concat(p);
+          if(d.type==='delete')return p.filter(function(t){return t.id!==d.id});
+          return p.map(function(t){return t.id===d.id?Object.assign({},t,d.update):t})
+        })
+      });
+      return function(){s.disconnect()}
+    }
+  },[user]);
 
-if(page==='landing' && !user){return e(AppCtx.Provider,{value:ctx},e(LandingPage,{onGetStarted:function(){setPage('auth')}}))}
+  const WS_ID=ld('activeWorkspace','default-workspace');
+  E(function(){if(socket&&user)socket.emit('join-workspace',WS_ID)},[socket,user]);
 
-if(!user){return e(AppCtx.Provider,{value:ctx},
-authPage==='login'?e(LoginPage,{onSwitch:function(){setAuthPage('register')}}):e(RegisterPage,{onSwitch:function(){setAuthPage('login')}})
-)}
+  /* Unified Data Actions */
+  function deleteTask(id){
+    setTasks(function(p){return p.filter(function(t){return t.id!==id})});
+    BC.del('tasks',id).catch(function(){});
+    if(socket)socket.emit('task-update',{id:id,workspaceId:WS_ID,type:'delete'});
+  }
+  function addTask(t){
+    setTasks(function(p){return[t].concat(p)});
+    BC.post('tasks',t).catch(function(){});
+    if(socket)socket.emit('task-update',{task:t,workspaceId:WS_ID,type:'create'});
+  }
+  function updateTask(id,up){
+    setTasks(function(p){return p.map(function(t){return t.id===id?Object.assign({},t,up):t})});
+    BC.patch('tasks',id,up).catch(function(){});
+    if(socket)socket.emit('task-update',{id:id,update:up,workspaceId:WS_ID,type:'update'});
+  }
 
-var pages={dashboard:Dashboard,chat:ChatView,tasks:TaskPage,study:StudyPage,workspaces:WorkspacePage,settings:SettingsPage};
-var PgComp=pages[page]||Dashboard;
+  /* Backend Sync on Load */
+  E(function(){
+    if(user){
+      BC.get('sessions').then(setSessions).catch(function(){});
+      BC.get('tasks').then(setTasks).catch(function(){});
+    }
+  },[user]);
 
-return e(AppCtx.Provider,{value:ctx},
-e('div',{className:'app-layout'},
-e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
-e(Sidebar,{collapsed:collapsed,onToggle:function(){setCollapsed(!collapsed)}}),
-e('div',{className:'main-content'},
-e(TopBar),
-page==='chat'?e(PgComp):e('div',{className:'page-container'},e(PgComp)),
-e(InputModal,Object.assign({},pm,{onClose:closePrompt}))
-)
-)
-)
+  /* Background effect */
+  E(function(){
+    if(background){
+      document.body.style.backgroundImage='url('+background+')';
+      document.body.style.backgroundSize='cover';
+      document.body.style.backgroundPosition='center';
+    }else{
+      document.body.style.backgroundImage='';
+      document.body.style.backgroundSize='';
+      document.body.style.backgroundPosition='';
+    }
+  },[background]);
+
+  var sessionMemberName=null;
+  if(activeSession){
+    var s=sessions.find(function(s){return s.id===activeSession});
+    if(s&&activeMemberId){
+      var m=s.members.find(function(m){return m.id===activeMemberId});
+      if(m)sessionMemberName=m.name;
+    }
+  }
+
+  var ctx={
+    user:user,login:login,logout:logout,
+    page:page,setPage:setPage,
+    model:model,setModel:setModel,
+    sessions:sessions,activeSession:activeSession,setActiveSession:setActiveSession,
+    createSession:createSession,deleteSession:deleteSession,updateSession:updateSession,
+    tasks:tasks,addTask:addTask,updateTask:updateTask,deleteTask:deleteTask,
+    apiKeys:apiKeys,setApiKeys:setApiKeys,
+    openPrompt:openPrompt,socket:socket,
+    language:language,setLanguage:setLanguage,
+    ttsMuted:ttsMuted,setTtsMuted:setTtsMuted,
+    background:background,setBackground:setBackground,
+    notifications:notifications,setNotifications:setNotifications,
+    activeMemberId:activeMemberId,setActiveMemberId:setActiveMemberId,
+    sessionMemberName:sessionMemberName,
+    collapsed:collapsed,mobileOpen:mobileOpen,setMobileOpen:setMobileOpen,
+    p2pRole:p2pRole,setP2pRole:setP2pRole,
+    p2pRoomId:p2pRoomId,setP2pRoomId:setP2pRoomId,
+    p2pConnections:p2pConnections,setP2pConnections:setP2pConnections,
+    peer:peer,setPeer:setPeer
+  };
+
+  if(page==='landing'&&!user){return e(AppCtx.Provider,{value:ctx},e(LandingPage,{onGetStarted:function(){setPage('auth')}}))}
+  if(!user){return e(AppCtx.Provider,{value:ctx},
+    authPage==='login'?e(LoginPage,{onSwitch:function(){setAuthPage('register')}}):e(RegisterPage,{onSwitch:function(){setAuthPage('login')}})
+  )}
+
+  var pages={dashboard:Dashboard,chat:ChatView,tasks:TaskPage,study:StudyPage,workspaces:WorkspacePage,settings:SettingsPage};
+  var PgComp=pages[page]||Dashboard;
+
+  return e(AppCtx.Provider,{value:ctx},
+    e('div',{className:'app-layout'},
+      e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
+      e(Sidebar,{collapsed:collapsed,onToggle:function(){setCollapsed(!collapsed)}}),
+      e('div',{className:'main-content'},
+        e(TopBar),
+        page==='chat'?e(PgComp):e('div',{className:'page-container'},e(PgComp)),
+        e(InputModal,Object.assign({},pm,{onClose:closePrompt}))
+      )
+    )
+  )
 }
 
 /* Mount */
