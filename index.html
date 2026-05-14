@@ -1143,6 +1143,7 @@ function App(){
   return e(AppCtx.Provider,{value:ctx},
     e('div',{className:'app-layout'},
       e('div',{className:'bg-orbs'},e('div',{className:'bg-orb bg-orb-1'}),e('div',{className:'bg-orb bg-orb-2'}),e('div',{className:'bg-orb bg-orb-3'})),
+      mobileOpen&&e('div',{style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:90},onClick:function(){setMobileOpen(false)}}),
       e(Sidebar,{collapsed:collapsed,onToggle:function(){setCollapsed(!collapsed)}}),
       e('div',{className:'main-content'},
         e(TopBar),
