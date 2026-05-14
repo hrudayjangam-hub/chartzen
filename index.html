@@ -410,7 +410,7 @@ app.createSession();
 setTimeout(async function(){
 try{
 var reply=await callOpenRouter(p,[],app.apiKeys.openrouter,'openai/gpt-4o');
-app.updateSession(app.activeSession,{messages:[{role:'user',content:'Generate study notes for '+topic},{role:'assistant',content:reply,timestamp:Date.now(),model:'gemini'}],title:topic+' Notes'})
+app.updateSession(app.activeSession,{messages:[{role:'user',content:'Generate study notes for '+topic},{role:'assistant',content:reply,timestamp:Date.now(),model:app.model}],title:topic+' Notes'})
 }catch(e){alert('Study Hub error: '+e.message)}
 },500);
 }catch(err){alert('Study Hub error: '+err.message)}
