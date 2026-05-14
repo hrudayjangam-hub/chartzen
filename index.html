@@ -355,6 +355,15 @@ function ChatView(){
   E(function(){if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'})},[messages.length,loading,typingUser]);
   E(function(){if(inRef.current)inRef.current.focus()},[app.activeSession]);
 
+  /* Auto-join P2P from QR scan */
+  E(function(){
+    if(app.pendingJoinHost&&session){
+      var hostId=app.pendingJoinHost;
+      app.setPendingJoinHost(null);
+      app.joinP2PRoom(hostId);
+    }
+  },[app.pendingJoinHost,session]);
+
   /* Leaflet Maps Init after render */
   E(function(){
     if(!msgsRef.current)return;
@@ -950,6 +959,43 @@ function App(){
   var _p2pRoom=S(null),p2pRoomId=_p2pRoom[0],setP2pRoomId=_p2pRoom[1];
   var _p2pConns=S([]),p2pConnections=_p2pConns[0],setP2pConnections=_p2pConns[1];
   var _peer=S(null),peer=_peer[0],setPeer=_peer[1];
+  var _joinHost=S(null),pendingJoinHost=_joinHost[0],setPendingJoinHost=_joinHost[1];
+
+  /* URL P2P Join handling */
+  E(function(){
+    var params=new URLSearchParams(window.location.search);
+    var joinId=params.get('join');
+    if(joinId&&user){
+      var s={id:uid(),title:'P2P Session',messages:[],tag:'General',members:[{id:user.id,name:user.name,avatar:user.avatar}],activeMemberId:user.id,createdAt:Date.now()};
+      setSessions(function(p){return[s].concat(p)});
+      setActiveSession(s.id);
+      setPendingJoinHost(joinId);
+      setPage('chat');
+    }
+  },[user]);
+
+  /* P2P Join helper — called from ChatView */
+  function joinP2PRoom(hostId){
+    if(!hostId)return;
+    try{
+      var p=new Peer();
+      setPeer(p);
+      p.on('open',function(id){
+        var conn=p.connect(hostId);
+        conn.on('open',function(){
+          setP2pRole('guest');
+          setP2pRoomId(hostId);
+          setP2pConnections([conn]);
+          conn.on('data',function(data){
+            if(data.type==='sync_history'){
+              setSessions(function(prev){return prev.map(function(s){return s.id===activeSession?Object.assign({},s,{messages:data.messages||[],title:data.title||'Synced Chat'}):s})})
+            }
+          });
+        });
+      });
+      p.on('error',function(){setP2pRole(null)});
+    }catch(e){}
+  }
 
   /* Prompt Modal State */
   var _pm=S({show:false,label:'',title:'',onConfirm:null}),pm=_pm[0],setPm=_pm[1];
@@ -1081,7 +1127,9 @@ function App(){
     p2pRole:p2pRole,setP2pRole:setP2pRole,
     p2pRoomId:p2pRoomId,setP2pRoomId:setP2pRoomId,
     p2pConnections:p2pConnections,setP2pConnections:setP2pConnections,
-    peer:peer,setPeer:setPeer
+    peer:peer,setPeer:setPeer,
+    pendingJoinHost:pendingJoinHost,setPendingJoinHost:setPendingJoinHost,
+    joinP2PRoom:joinP2PRoom
   };
 
   if(page==='landing'&&!user){return e(AppCtx.Provider,{value:ctx},e(LandingPage,{onGetStarted:function(){setPage('auth')}}))}
