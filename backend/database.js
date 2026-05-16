@@ -55,6 +55,39 @@ const db = {
     db.save(data);
   },
 
+  // --- Groups ---
+  findGroupsByUser: (userId) => {
+    const data = init();
+    return data.groups ? data.groups.filter(g => g.members && g.members.some(m => m.id === userId)).sort((a,b) => b.createdAt - a.createdAt) : [];
+  },
+  findGroupById: (id) => {
+    const data = init();
+    return data.groups ? data.groups.find(g => g.id === id) : null;
+  },
+  createGroup: (group) => {
+    const data = init();
+    if (!data.groups) data.groups = [];
+    data.groups.push(group);
+    db.save(data);
+    return group;
+  },
+  updateGroup: (id, update) => {
+    const data = init();
+    if (!data.groups) data.groups = [];
+    const idx = data.groups.findIndex(g => g.id === id);
+    if (idx !== -1) {
+      data.groups[idx] = { ...data.groups[idx], ...update };
+      db.save(data);
+    }
+    return data.groups[idx];
+  },
+  deleteGroup: (id) => {
+    const data = init();
+    if (!data.groups) data.groups = [];
+    data.groups = data.groups.filter(g => g.id !== id);
+    db.save(data);
+  },
+
   // --- Tasks ---
   findTasksByUser: (userId) => {
     const data = init();

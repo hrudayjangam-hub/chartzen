@@ -75,6 +75,56 @@ app.delete('/api/sessions/:id', authenticate, (req, res) => {
   res.json({ success: true });
 });
 
+// --- GROUPS API ---
+app.get('/api/groups', authenticate, (req, res) => {
+  res.json(db.findGroupsByUser(req.user.id));
+});
+
+app.post('/api/groups', authenticate, (req, res) => {
+  if (!req.body.name) return res.status(400).json({ error: 'Group name is required' });
+  const group = db.createGroup({ ...req.body, id: req.body.id || Date.now().toString(), createdAt: Date.now() });
+  res.json(group);
+});
+
+app.get('/api/groups/:id', authenticate, (req, res) => {
+  const group = db.findGroupById(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  res.json(group);
+});
+
+app.post('/api/groups/:id/join', authenticate, (req, res) => {
+  const group = db.findGroupById(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  if (!req.body.member || !req.body.member.id || !req.body.member.name) return res.status(400).json({ error: 'Member id and name required' });
+  if (!group.members) group.members = [];
+  const member = req.body.member;
+  if (!group.members.some(m => m.id === member.id)) {
+    group.members.push(member);
+    db.updateGroup(req.params.id, { members: group.members });
+  }
+  res.json(group);
+});
+
+app.post('/api/groups/:id/leave', authenticate, (req, res) => {
+  const group = db.findGroupById(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+  if (group.members) {
+    group.members = group.members.filter(m => m.id !== userId);
+    db.updateGroup(req.params.id, { members: group.members });
+  }
+  if (!group.members || group.members.length === 0) {
+    db.deleteGroup(req.params.id);
+  }
+  res.json({ success: true });
+});
+
+app.delete('/api/groups/:id', authenticate, (req, res) => {
+  db.deleteGroup(req.params.id);
+  res.json({ success: true });
+});
+
 // --- TASKS API ---
 app.get('/api/tasks', authenticate, (req, res) => {
   res.json(db.findTasksByUser(req.user.id));
@@ -148,6 +198,32 @@ io.on('connection', (socket) => {
 
   socket.on('typing', (data) => {
     socket.to(data.workspaceId).emit('user-typing', data);
+  });
+
+  // ─── Group Chat Events ───
+  socket.on('group-join', (data) => {
+    socket.join('group:' + data.groupId);
+    console.log(`👤 User ${data.userName} joined group room: ${data.groupId}`);
+  });
+
+  socket.on('group-leave', (data) => {
+    socket.leave('group:' + data.groupId);
+    console.log(`👤 User ${data.userName} left group room: ${data.groupId}`);
+  });
+
+  socket.on('group-message', (data) => {
+    socket.broadcast.to('group:' + data.groupId).emit('group-remote-message', data);
+    // Also persist to database
+    const group = db.findGroupById(data.groupId);
+    if (group) {
+      group.messages = group.messages || [];
+      group.messages.push(data.message);
+      db.updateGroup(data.groupId, { messages: group.messages });
+    }
+  });
+
+  socket.on('group-typing', (data) => {
+    socket.to('group:' + data.groupId).emit('group-user-typing', data);
   });
 
   socket.on('disconnect', () => {

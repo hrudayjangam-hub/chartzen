@@ -208,6 +208,7 @@ function Sidebar(p){
   var navItems=[
     {key:'dashboard',icon:'layout-dashboard',label:'Dashboard'},
     {key:'chat',icon:'message-square',label:'AI Chat'},
+    {key:'groupchat',icon:'comments',label:'Group Chat'},
     {key:'workspaces',icon:'users',label:'Workspaces'},
     {key:'tasks',icon:'check-square',label:'Tasks'},
     {key:'study',icon:'book-open',label:'Study Hub'}
@@ -270,14 +271,14 @@ function Sidebar(p){
 /* TOPBAR */
 function TopBar(){
   var app=useApp();
-  var titles={dashboard:'Dashboard',chat:'AI Chat',workspaces:'Workspaces',tasks:'Task Manager',study:'Study Hub',settings:'Settings'};
+  var titles={dashboard:'Dashboard',chat:'AI Chat',groupchat:'Group Chat',workspaces:'Workspaces',tasks:'Task Manager',study:'Study Hub',settings:'Settings'};
   return e('div',{className:'topbar'},
     e('div',{className:'topbar-left'},
       e('button',{className:'topbar-icon-btn',style:{width:32,height:32,marginRight:4},onClick:function(){app.setMobileOpen(!app.mobileOpen)},title:'Menu'},e(Ic,{name:'bars',size:18})),
       e('div',null,e('div',{className:'topbar-title'},titles[app.page]||'ChartGen'),e('div',{className:'topbar-subtitle'},'Think together, build smarter'))
     ),
     e('div',{className:'topbar-right'},
-      app.page==='chat'&&e('div',{className:'topbar-model-selector'},
+      (app.page==='chat'||app.page==='groupchat')&&e('div',{className:'topbar-model-selector'},
         MODELS.map(function(m){return e('button',{key:m.id,className:'model-tab'+(app.model===m.id?' active':''),onClick:function(){app.setModel(m.id)}},m.label)})
       ),
       e('div',{className:'topbar-icon-btn',title:'Language: '+app.language,style:{position:'relative'}},
@@ -959,6 +960,256 @@ function InputModal(p){
   )
 }
 
+/* GROUP CHAT VIEW */
+function GroupChatView(){
+  var app=useApp();
+  var _actGrp=S(null),activeGroupId=_actGrp[0],setActiveGroupId=_actGrp[1];
+  var _inp=S(''),input=_inp[0],setInput=_inp[1];
+  var _load=S(false),loading=_load[0],setLoading=_load[1];
+  var _typing=S(null),typingUser=_typing[0],setTypingUser=_typing[1];
+  var endRef=R(null);var inRef=R(null);
+  var activeGroup=app.groups.find(function(g){return g.id===activeGroupId});
+  var groups=app.groups;var setGroups=app.setGroups;
+
+  E(function(){if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'})},[activeGroup?.messages?.length,typingUser]);
+
+  /* Socket.io group events */
+  /* Re-attach group rooms on socket (re)connect */
+  E(function(){
+    if(!app.socket||!activeGroupId)return;
+    var joinedId=activeGroupId;
+    app.socket.emit('group-join',{groupId:joinedId,userName:app.user.name,userId:app.user.id});
+    function onConnect(){
+      app.socket.emit('group-join',{groupId:joinedId,userName:app.user.name,userId:app.user.id});
+    }
+    app.socket.on('connect',onConnect);
+    function onMsg(data){
+      setGroups(function(prev){return prev.map(function(g){if(g.id===data.groupId){var msgs=g.messages||[];var exists=msgs.some(function(m){return m.id===data.message.id});return exists?g:Object.assign({},g,{messages:msgs.concat([data.message])})}return g})})
+    }
+    function onTyping(data){
+      if(data.userId!==app.user.id)setTypingUser(data.isTyping?data.userName:null)
+    }
+    app.socket.on('group-remote-message',onMsg);
+    app.socket.on('group-user-typing',onTyping);
+    return function(){
+      app.socket.off('connect',onConnect);
+      app.socket.emit('group-leave',{groupId:joinedId,userName:app.user.name});
+      app.socket.off('group-remote-message',onMsg);
+      app.socket.off('group-user-typing',onTyping);
+    }
+  },[app.socket,activeGroupId]);
+
+  function createGroup(){
+    app.openPrompt('Enter a name for your group:','Create Group',function(name){
+      if(!name)return;
+      var code=uid().slice(-8).toUpperCase();
+      var grp={id:uid(),name:name,code:code,members:[{id:app.user.id,name:app.user.name,avatar:app.user.avatar}],messages:[],createdBy:app.user.id,createdAt:Date.now()};
+      setGroups(function(p){return[grp].concat(p)});
+      setActiveGroupId(grp.id);
+      BC.post('groups',grp).then(function(serverGrp){
+        if(serverGrp&&serverGrp.id!==grp.id){
+          setGroups(function(p){return p.map(function(g){return g.id===grp.id?serverGrp:g})})
+        }
+      }).catch(function(err){alert('Failed to create group on server: '+err.message)});
+    })
+  }
+
+  function joinGroup(){
+    app.openPrompt('Enter the group code to join:','Join Group',function(code){
+      if(!code)return;
+      var codeUpper=code.toUpperCase();
+      var existing=groups.find(function(g){return g.code===codeUpper});
+      if(existing){
+        if(!existing.members.some(function(m){return m.id===app.user.id})){
+          var updated=Object.assign({},existing,{members:existing.members.concat([{id:app.user.id,name:app.user.name,avatar:app.user.avatar}])});
+          setGroups(function(p){return p.map(function(g){return g.id===existing.id?updated:g})});
+          BC.post('groups/'+existing.id+'/join',{member:{id:app.user.id,name:app.user.name,avatar:app.user.avatar}}).catch(function(err){alert('Failed to join group: '+err.message)});
+        }
+        setActiveGroupId(existing.id);
+        if(app.socket)app.socket.emit('group-join',{groupId:existing.id,userName:app.user.name,userId:app.user.id});
+        return;
+      }
+      BC.get('groups').then(function(allGroups){
+        var remote=allGroups.find(function(g){return g.code===codeUpper});
+        if(remote){
+          var updated=Object.assign({},remote);
+          if(!updated.members)updated.members=[];
+          if(!updated.members.some(function(m){return m.id===app.user.id})){
+            updated.members=updated.members.concat([{id:app.user.id,name:app.user.name,avatar:app.user.avatar}]);
+            setGroups(function(p){return[updated].concat(p)});
+            BC.post('groups/'+remote.id+'/join',{member:{id:app.user.id,name:app.user.name,avatar:app.user.avatar}}).catch(function(err){alert('Failed to join group: '+err.message)});
+          }
+          setActiveGroupId(remote.id);
+          if(app.socket)app.socket.emit('group-join',{groupId:remote.id,userName:app.user.name,userId:app.user.id});
+        }else{
+          alert('Group code not found. Check the code and try again.');
+        }
+      }).catch(function(){alert('Could not search for groups on server.');});
+    })
+  }
+
+  function deleteGroup(id){
+    if(!confirm('Delete this group chat?'))return;
+    setGroups(function(p){return p.filter(function(g){return g.id!==id})});
+    if(activeGroupId===id)setActiveGroupId(null);
+    BC.del('groups',id).catch(function(err){alert('Failed to delete group: '+err.message)});
+  }
+
+  function leaveGroup(id){
+    var g=groups.find(function(g){return g.id===id});
+    if(g&&g.createdBy===app.user.id){
+      if(!confirm('You created this group. Leaving will delete it for everyone. Continue?'))return;
+      deleteGroup(id);
+      return;
+    }
+    setGroups(function(p){return p.map(function(g){
+      if(g.id===id)return Object.assign({},g,{members:g.members.filter(function(m){return m.id!==app.user.id})});
+      return g
+    }).filter(function(g){return g.members.length>0})});
+    if(activeGroupId===id)setActiveGroupId(null);
+    if(app.socket)app.socket.emit('group-leave',{groupId:id,userName:app.user.name});
+    BC.post('groups/'+id+'/leave',{userId:app.user.id}).catch(function(err){console.error('Leave group error:',err.message)});
+  }
+
+  async function sendMessage(){
+    var text=input.trim();
+    if(!text||loading)return;
+    var isAIMention=text.startsWith('@AI ')||text.startsWith('@ai ')||text.startsWith('/ai ');
+    var cleanText=text.replace(/^@AI /i,'').replace(/^\/ai /i,'');
+    var msg={id:uid(),userId:app.user.id,userName:app.user.name,userAvatar:app.user.avatar,content:text,timestamp:Date.now(),isAI:false};
+    setGroups(function(p){return p.map(function(g){if(g.id===activeGroupId){var msgs=g.messages||[];return Object.assign({},g,{messages:msgs.concat([msg])})}return g})});
+    setInput('');setLoading(true);
+    if(app.socket&&activeGroupId){
+      app.socket.emit('group-message',{groupId:activeGroupId,message:msg})
+    }
+    if(isAIMention&&cleanText){
+      try{
+        var reply=await callOpenRouter(cleanText,[],app.apiKeys.openrouter,app.model);
+        var aiMsg={id:uid(),userId:'ai',userName:'ChartGen AI',userAvatar:'C',content:reply,timestamp:Date.now(),isAI:true};
+        setGroups(function(p){return p.map(function(g){if(g.id===activeGroupId){var msgs=g.messages||[];return Object.assign({},g,{messages:msgs.concat([aiMsg])})}return g})});
+        if(app.socket&&activeGroupId){
+          app.socket.emit('group-message',{groupId:activeGroupId,message:aiMsg})
+        }
+      }catch(err){
+        var errMsg={id:uid(),userId:'ai',userName:'ChartGen AI',userAvatar:'C',content:'⚠️ Error: '+err.message,timestamp:Date.now(),isAI:true};
+        setGroups(function(p){return p.map(function(g){if(g.id===activeGroupId){var msgs=g.messages||[];return Object.assign({},g,{messages:msgs.concat([errMsg])})}return g})});
+      }
+    }
+    setLoading(false);
+  }
+
+  function onKey(ev){if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();sendMessage()}}
+  function handleTyping(ev){
+    setInput(ev.target.value);
+    ev.target.style.height='auto';
+    ev.target.style.height=Math.min(ev.target.scrollHeight,150)+'px';
+    if(app.socket&&activeGroupId)app.socket.emit('group-typing',{groupId:activeGroupId,userId:app.user.id,userName:app.user.name,isTyping:!!ev.target.value})
+  }
+
+  function copyGroupCode(code){
+    if(navigator.clipboard){navigator.clipboard.writeText(code).then(function(){alert('Group code copied!')})}
+  }
+
+  return e('div',{className:'group-chat-page'},
+    e('div',{className:'group-chat-sidebar'},
+      e('div',{className:'group-list-header'},
+        e('h3',null,'Group Chats'),
+        e('div',{style:{display:'flex',gap:4}},
+          e('button',{className:'topbar-icon-btn',style:{width:32,height:32},title:'Create Group',onClick:createGroup},e(Ic,{name:'plus',size:16})),
+          e('button',{className:'topbar-icon-btn',style:{width:32,height:32},title:'Join Group',onClick:joinGroup},e(Ic,{name:'link',size:16}))
+        )
+      ),
+      e('div',{className:'group-list'},
+        groups.length===0&&e('div',{style:{textAlign:'center',padding:20,color:'var(--text-muted)',fontSize:'var(--fs-sm)'}},
+          e('p',null,'No groups yet'),
+          e('button',{className:'group-create-btn',onClick:createGroup},e(Ic,{name:'plus',size:16}),' Create Group'),
+          e('button',{className:'group-create-btn',style:{background:'transparent',border:'1px solid var(--border-glass)',color:'var(--text-secondary)'},onClick:joinGroup},e(Ic,{name:'link',size:16}),' Join Group')
+        ),
+        groups.map(function(g){return e('div',{key:g.id,className:'group-list-item'+(activeGroupId===g.id?' active':''),onClick:function(){setActiveGroupId(g.id)}},
+          e('div',{className:'group-list-item-avatar'},g.name[0]),
+          e('div',{className:'group-list-item-info'},
+            e('div',{className:'group-list-item-name'},g.name),
+            e('div',{className:'group-list-item-meta'},(g.members?g.members.length:0)+' members'+(g.code?' · Code: '+g.code:''))
+          ),
+          e('button',{className:'session-delete',style:{opacity:1},title:'Delete',onClick:function(ev){ev.stopPropagation();deleteGroup(g.id)}},e(Ic,{name:'trash-2',size:14}))
+        )})
+      )
+    ),
+    e('div',{className:'group-chat-main'},
+      !activeGroup?e('div',{className:'group-welcome'},
+        e('div',{className:'group-welcome-icon'},e(Ic,{name:'comments',size:36})),
+        e('h2',null,'Group ',e('span',{className:'hero-reveal'},'Chat')),
+        e('p',null,'Create a group or join one using a code. Chat with your team and use @AI to ask questions together.'),
+        e('div',{style:{display:'flex',gap:12,marginTop:20}},
+          e('button',{className:'btn-primary',style:{width:'auto',padding:'12px 28px'},onClick:createGroup},e(Ic,{name:'plus',size:16}),' Create Group'),
+          e('button',{className:'btn-glass',style:{padding:'12px 28px'},onClick:joinGroup},e(Ic,{name:'link',size:16}),' Join Group')
+        )
+      ):e(React.Fragment,null,
+        e('div',{className:'group-chat-header'},
+          e('div',{className:'group-chat-header-left'},
+            e('div',{className:'group-list-item-avatar',style:{width:36,height:36,fontSize:14}},activeGroup.name[0]),
+            e('div',null,
+              e('div',{className:'group-chat-header-name'},activeGroup.name),
+              e('div',{style:{display:'flex',alignItems:'center',gap:8}},
+                e('div',{className:'group-member-avatars'},
+                  (activeGroup.members||[]).map(function(m,i){return e('div',{key:i,className:'group-member-avatar',title:m.name},m.avatar||m.name[0])})
+                ),
+                e('span',{className:'group-member-count'},(activeGroup.members||[]).length+' members'),
+                activeGroup.code&&e('span',{className:'group-code-display',style:{fontSize:11,padding:'2px 10px',cursor:'pointer'},onClick:function(){copyGroupCode(activeGroup.code)},title:'Click to copy'},'Code: '+activeGroup.code)
+              )
+            )
+          ),
+          e('div',{style:{display:'flex',gap:4}},
+            e('button',{className:'topbar-icon-btn',style:{width:32,height:32},title:'Leave Group',onClick:function(){leaveGroup(activeGroup.id)}},e(Ic,{name:'log-out',size:16})),
+            e('button',{className:'topbar-icon-btn',style:{width:32,height:32},title:'Delete Group',onClick:function(){deleteGroup(activeGroup.id)}},e(Ic,{name:'trash-2',size:16}))
+          )
+        ),
+        e('div',{className:'group-messages',style:{flex:1,overflowY:'auto',padding:'16px 20px'}},
+          (!activeGroup.messages||activeGroup.messages.length===0)?
+          e('div',{className:'group-empty-state'},
+            e(Ic,{name:'comments',size:48}),
+            e('p',{style:{fontSize:'var(--fs-lg)',fontWeight:600,color:'var(--text-secondary)'}},'No messages yet'),
+            e('p',{style:{fontSize:'var(--fs-sm)'}},'Send a message to start the conversation. Use @AI to ask the AI a question.')
+          ):
+          e(React.Fragment,null,
+            activeGroup.messages.map(function(m){
+              var isAI=m.isAI||m.userId==='ai';
+              return e('div',{key:m.id,className:'group-message-row'},
+                e('div',{className:'group-message-avatar',style:isAI?{background:'var(--gradient-primary)'}:{background:'rgba(59,130,246,0.3)',color:'var(--blue-400)'}},isAI?'C':(m.userAvatar||m.userName[0])),
+                e('div',{className:'group-message-content'},
+                  e('div',{className:'group-message-sender',style:isAI?{color:'var(--cyan-400)'}:{}},isAI?'ChartGen AI':m.userName),
+                  isAI?
+                  e('div',{className:'group-message-bubble ai-bubble',dangerouslySetInnerHTML:{__html:window.marked?window.marked.parse(m.content):m.content}}):
+                  e('div',{className:'group-message-bubble'},m.content),
+                  e('div',{className:'group-message-time'},fmtTime(m.timestamp))
+                )
+              )
+            }),
+            typingUser&&e('div',{className:'group-message-row'},
+              e('div',{className:'group-message-avatar',style:{background:'rgba(148,163,184,0.2)',color:'var(--text-muted)'}},'...'),
+              e('div',{className:'group-message-content'},
+                e('div',{className:'group-message-sender',style:{color:'var(--text-muted)'}},typingUser),
+                e('div',{className:'group-message-bubble',style:{display:'flex',alignItems:'center',gap:8}},
+                  e('span',{style:{fontSize:'var(--fs-sm)',color:'var(--text-muted)'}},'typing'),
+                  e('div',{className:'typing-indicator'},e('span',{className:'typing-dot'}),e('span',{className:'typing-dot'}),e('span',{className:'typing-dot'}))
+                )
+              )
+            ),
+            e('div',{ref:endRef})
+          )
+        ),
+        e('div',{className:'chat-input-area',style:{borderTop:'1px solid var(--border-glass)',padding:'12px 16px'}},
+          e('div',{className:'chat-input-wrapper'},
+            e('textarea',{ref:inRef,className:'chat-input',rows:1,placeholder:'Type a message... Use @AI to ask AI',value:input,onChange:handleTyping,onKeyDown:onKey,disabled:loading}),
+            e('button',{className:'chat-send-btn',onClick:sendMessage,disabled:!input.trim()||loading,title:'Send'},e(Ic,{name:'send',size:20}))
+          ),
+          e('div',{className:'chat-hint'},e('span',{style:{color:'var(--purple-400)'}},'@AI'),' to ask AI • Enter to send, Shift+Enter for new line')
+        )
+      )
+    )
+  )
+}
+
 /* MAIN APP */
 function App(){
   var _u=S(function(){return ld('currentUser',null)}),user=_u[0],setUser=_u[1];
@@ -975,6 +1226,7 @@ function App(){
   var _tts=S(function(){return ld('ttsMuted',false)}),ttsMuted=_tts[0],setTtsMuted=_tts[1];
   var _bg=S(null),background=_bg[0],setBackground=_bg[1];
   var _notif=S([]),notifications=_notif[0],setNotifications=_notif[1];
+  var _grp=S(function(){return ld('groups',[])}),groups=_grp[0],setGroups=_grp[1];
   var _am=S(null),activeMemberId=_am[0],setActiveMemberId=_am[1];
   var _p2pRole=S(null),p2pRole=_p2pRole[0],setP2pRole=_p2pRole[1];
   var _p2pRoom=S(null),p2pRoomId=_p2pRoom[0],setP2pRoomId=_p2pRoom[1];
@@ -1039,6 +1291,7 @@ function App(){
   E(function(){sv('sessions',sessions)},[sessions]);
   E(function(){sv('activeSession',activeSession)},[activeSession]);
   E(function(){sv('tasks',tasks)},[tasks]);
+  E(function(){sv('groups',groups)},[groups]);
   E(function(){sv('apiKeys',apiKeys)},[apiKeys]);
   E(function(){sv('language',language)},[language]);
   E(function(){sv('ttsMuted',ttsMuted)},[ttsMuted]);
@@ -1117,6 +1370,15 @@ function App(){
     if(user){
       BC.get('sessions').then(setSessions).catch(function(){});
       BC.get('tasks').then(setTasks).catch(function(){});
+      BC.get('groups').then(function(serverGroups){
+        if(serverGroups&&serverGroups.length>0){
+          var merged=serverGroups.slice();
+          groups.forEach(function(lg){
+            if(!merged.some(function(sg){return sg.id===lg.id}))merged.push(lg);
+          });
+          setGroups(merged);
+        }
+      }).catch(function(){});
     }
   },[user]);
 
@@ -1157,6 +1419,7 @@ function App(){
     notifications:notifications,setNotifications:setNotifications,
     activeMemberId:activeMemberId,setActiveMemberId:setActiveMemberId,
     sessionMemberName:sessionMemberName,
+    groups:groups,setGroups:setGroups,
     collapsed:collapsed,mobileOpen:mobileOpen,setMobileOpen:setMobileOpen,
     p2pRole:p2pRole,setP2pRole:setP2pRole,
     p2pRoomId:p2pRoomId,setP2pRoomId:setP2pRoomId,
@@ -1171,7 +1434,7 @@ function App(){
     authPage==='login'?e(LoginPage,{onSwitch:function(){setAuthPage('register')}}):e(RegisterPage,{onSwitch:function(){setAuthPage('login')}})
   )}
 
-  var pages={dashboard:Dashboard,chat:ChatView,tasks:TaskPage,study:StudyPage,workspaces:WorkspacePage,settings:SettingsPage};
+  var pages={dashboard:Dashboard,chat:ChatView,groupchat:GroupChatView,tasks:TaskPage,study:StudyPage,workspaces:WorkspacePage,settings:SettingsPage};
   var PgComp=pages[page]||Dashboard;
 
   return e(AppCtx.Provider,{value:ctx},
@@ -1181,7 +1444,7 @@ function App(){
       e(Sidebar,{collapsed:collapsed,onToggle:function(){setCollapsed(!collapsed)}}),
       e('div',{className:'main-content'},
         e(TopBar),
-        page==='chat'?e(PgComp):e('div',{className:'page-container'},e(PgComp)),
+        (page==='chat'||page==='groupchat')?e(PgComp):e('div',{className:'page-container'},e(PgComp)),
         e(InputModal,Object.assign({},pm,{onClose:closePrompt}))
       )
     )
